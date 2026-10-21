@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cupones para Mercado Libre — códigos de descuento actualizados</title>
+  <meta name="description" content="Cupones y códigos de descuento para Mercado Libre, verificados y actualizados todos los días. Copiá el código y ahorrá en tu compra.">
+  <link rel="canonical" href="https://cupones-mercadolibre.com/">
+  <meta property="og:title" content="Cupones para Mercado Libre">
+  <meta property="og:description" content="Códigos de descuento actualizados todos los días.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="logo" href="/">🏷️ <span>cupones</span>-mercadolibre</a>
+      <p class="tagline">Códigos de descuento actualizados todos los días</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="controls">
+      <input id="buscar" type="search" placeholder="Buscar cupón (ej: celulares, moda, envío)…" aria-label="Buscar cupón">
+      <div id="categorias" class="chips" role="tablist" aria-label="Categorías"></div>
+    </section>
+
+    <p id="contador" class="contador"></p>
+    <section id="lista" class="grid" aria-live="polite"></section>
+    <p id="vacio" class="vacio" hidden>No encontramos cupones con ese filtro. Probá con otra búsqueda.</p>
+  </main>
+
+  <footer class="pie">
+    <div class="wrap">
+      <p>Sitio independiente. <strong>No estamos afiliados ni somos parte de Mercado Libre.</strong> Las marcas pertenecen a sus respectivos dueños. Las condiciones de cada cupón las define el vendedor o la plataforma; verificá antes de comprar.</p>
+      <p>© <span id="anio"></span> cupones-mercadolibre.com</p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" hidden>¡Código copiado!</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
