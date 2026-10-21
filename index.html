@@ -3,20 +3,54 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cupones Mercado Libre México de hoy — códigos activos</title>
-  <meta name="description" content="Cupones y códigos de descuento de Mercado Libre México, revisados cada 5 minutos. Copia el código y ahorra en tu compra.">
+  <title>Cupones para Mercado Libre México de hoy — sitio independiente</title>
+  <meta name="description" content="Directorio independiente de cupones públicos para Mercado Libre México, revisados cada 5 minutos. No somos Mercado Libre ni pedimos datos personales: copia el código y compra en el sitio oficial.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="cupones-mercadolibre.com">
   <link rel="canonical" href="https://cupones-mercadolibre.com/">
-  <meta property="og:title" content="Cupones Mercado Libre México de hoy">
-  <meta property="og:description" content="Códigos de descuento activos, revisados cada 5 minutos.">
+  <meta property="og:site_name" content="cupones-mercadolibre.com (independiente)">
+  <meta property="og:title" content="Cupones para Mercado Libre México de hoy">
+  <meta property="og:description" content="Directorio independiente de cupones públicos, revisados cada 5 minutos. No afiliado a Mercado Libre.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cupones-mercadolibre.com/">
+  <meta property="og:locale" content="es_MX">
+  <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#f7f7f5">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://cupones-mercadolibre.com/#org",
+        "name": "cupones-mercadolibre.com",
+        "url": "https://cupones-mercadolibre.com/",
+        "email": "contacto@cupones-mercadolibre.com",
+        "description": "Sitio independiente que reúne cupones públicos para Mercado Libre México. No está afiliado, asociado ni patrocinado por MercadoLibre.",
+        "contactPoint": [
+          { "@type": "ContactPoint", "contactType": "customer support", "email": "contacto@cupones-mercadolibre.com", "availableLanguage": "es" },
+          { "@type": "ContactPoint", "contactType": "abuse and legal", "email": "abuso@cupones-mercadolibre.com", "availableLanguage": "es" }
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://cupones-mercadolibre.com/#web",
+        "url": "https://cupones-mercadolibre.com/",
+        "name": "Cupones para Mercado Libre México (independiente)",
+        "inLanguage": "es-MX",
+        "publisher": { "@id": "https://cupones-mercadolibre.com/#org" }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
+  <div class="aviso-top">Sitio independiente · No somos Mercado Libre ni estamos afiliados a ella · <a href="/acerca">Más info</a></div>
   <header class="top">
     <div class="wrap top-in">
       <a class="logo" href="/"><span class="logo-mark">%</span><span>cupones<span class="logo-dim">-mercadolibre</span></span></a>
@@ -27,8 +61,8 @@
   <main class="wrap">
     <section class="hero">
       <p class="fecha" id="fecha"></p>
-      <h1>Cupones de Mercado Libre <span class="nowrap">de hoy</span></h1>
-      <p class="sub">Revisamos los códigos cada 5 minutos. Toca <strong>Ver código</strong>, se copia solo y te llevamos a Mercado Libre.</p>
+      <h1>Cupones para Mercado Libre <span class="nowrap">de hoy</span></h1>
+      <p class="sub">Reunimos cupones públicos y los revisamos cada 5 minutos. Toca <strong>Ver código</strong>, se copia solo y te llevamos al sitio oficial de Mercado Libre. <strong>Nunca te pediremos datos ni contraseñas.</strong></p>
     </section>
 
     <div id="categorias" class="chips" role="tablist" aria-label="Categorías" hidden></div>
@@ -48,13 +82,14 @@
 
   <footer class="pie">
     <div class="wrap">
-      <p>Sitio independiente. <strong>No estamos afiliados ni somos parte de Mercado Libre.</strong> Algunos enlaces son de afiliado y pueden generar una comisión, sin costo extra para ti. Las condiciones de cada cupón las define Mercado Libre.</p>
+      <nav class="pie-links"><a href="/acerca">Quiénes somos</a><a href="/terminos">Términos</a><a href="/privacidad">Privacidad</a><a href="/acerca#contacto">Contacto</a><a href="/acerca#quejas">Reportar un problema</a></nav>
+      <p>Sitio independiente. <strong>No estamos afiliados, asociados ni patrocinados por Mercado Libre.</strong> "Mercado Libre" es marca de sus respectivos titulares y se menciona solo para indicar a qué tienda aplican los cupones. Algunos enlaces son de <a href="/acerca#afiliados">afiliado</a> y pueden generar una comisión, sin costo extra para ti. Las condiciones de cada cupón las define Mercado Libre.</p>
       <p>© <span id="anio"></span> cupones-mercadolibre.com</p>
     </div>
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite">Código copiado</div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

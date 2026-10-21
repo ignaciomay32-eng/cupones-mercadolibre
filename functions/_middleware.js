@@ -24,6 +24,7 @@ const PAGINA_BLOQUEO = `<!doctype html>
   <main>
     <h1>Sitio no disponible</h1>
     <p>Este sitio no está disponible en tu región.</p>
+    <p style="margin-top:12px;font-size:.85rem"><a href="/acerca" style="color:#0e7a52">Quiénes somos y contacto</a></p>
   </main>
 </body>
 </html>`;
@@ -36,8 +37,13 @@ function estaBloqueado(cf) {
   return BLOQUEADOS.some((b) => pais === b.pais && (codigo === b.codigo || nombre === b.nombre));
 }
 
+// Estas rutas se ven desde cualquier lugar: quién opera el sitio, contacto y reglas
+// tienen que estar siempre disponibles para revisores y quejas de abuso.
+const SIEMPRE_VISIBLES = /^\/(acerca|terminos|privacidad)(\.html)?$|^\/\.well-known\/|^\/(robots\.txt|sitemap\.xml|styles\.css)$/;
+
 export async function onRequest({ request, next }) {
-  if (estaBloqueado(request.cf)) {
+  const ruta = new URL(request.url).pathname;
+  if (!SIEMPRE_VISIBLES.test(ruta) && estaBloqueado(request.cf)) {
     return new Response(PAGINA_BLOQUEO, {
       status: 403,
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
