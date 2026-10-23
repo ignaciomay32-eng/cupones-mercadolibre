@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cupones para Mercado Libre México de hoy — sitio independiente</title>
-  <meta name="description" content="Directorio independiente de cupones públicos para Mercado Libre México, revisados cada 5 minutos. No somos Mercado Libre ni pedimos datos personales: copia el código y compra en el sitio oficial.">
+  <title>Recopilación de cupones en Mercado Libre México — sitio independiente</title>
+  <meta name="description" content="Recopilación independiente de cupones públicos para Mercado Libre México, revisados cada 5 minutos, con historial, opiniones y cuántas personas los usaron. No somos Mercado Libre ni pedimos datos personales.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="author" content="cupones-mercadolibre.com">
   <link rel="canonical" href="https://cupones-mercadolibre.com/">
   <meta property="og:site_name" content="cupones-mercadolibre.com (independiente)">
-  <meta property="og:title" content="Cupones para Mercado Libre México de hoy">
-  <meta property="og:description" content="Directorio independiente de cupones públicos, revisados cada 5 minutos. No afiliado a Mercado Libre.">
+  <meta property="og:title" content="Recopilación de cupones en Mercado Libre">
+  <meta property="og:description" content="Cupones públicos revisados cada 5 minutos, con historial y opiniones. Sitio independiente, no afiliado a Mercado Libre.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://cupones-mercadolibre.com/">
   <meta property="og:locale" content="es_MX">
@@ -19,8 +19,8 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=5">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -41,7 +41,7 @@
         "@type": "WebSite",
         "@id": "https://cupones-mercadolibre.com/#web",
         "url": "https://cupones-mercadolibre.com/",
-        "name": "Cupones para Mercado Libre México (independiente)",
+        "name": "Recopilación de cupones en Mercado Libre (independiente)",
         "inLanguage": "es-MX",
         "publisher": { "@id": "https://cupones-mercadolibre.com/#org" }
       }
@@ -61,12 +61,25 @@
   <main class="wrap">
     <section class="hero">
       <p class="fecha" id="fecha"></p>
-      <h1>Cupones para Mercado Libre <span class="nowrap">de hoy</span></h1>
-      <p class="sub">Reunimos cupones públicos y los revisamos cada 5 minutos. Toca <strong>Ver código</strong>, se copia solo y te llevamos al sitio oficial de Mercado Libre. <strong>Nunca te pediremos datos ni contraseñas.</strong></p>
+      <h1>Recopilación de cupones <span class="h1-acento">en Mercado Libre</span></h1>
+      <p class="sub">Todos los cupones públicos en un solo lugar, revisados cada 5 minutos. <strong>Nunca te pediremos datos ni contraseñas.</strong></p>
+      <dl class="stats" id="stats">
+        <div><dt>Cupones activos</dt><dd id="st-activos">–</dd></div>
+        <div><dt>Veces usados</dt><dd id="st-usos">–</dd></div>
+        <div><dt>En el historial</dt><dd id="st-historial">–</dd></div>
+      </dl>
     </section>
 
-    <div id="categorias" class="chips" role="tablist" aria-label="Categorías" hidden></div>
+    <ol class="pasos" aria-label="Cómo usar un cupón">
+      <li><span class="paso-n">1</span><span>Toca <strong>Ver código</strong></span></li>
+      <li><span class="paso-n">2</span><span>Se copia solo</span></li>
+      <li><span class="paso-n">3</span><span>Pégalo al pagar en Mercado Libre</span></li>
+    </ol>
 
+    <div class="seccion-titulo">
+      <h2>Cupones activos</h2>
+      <div id="categorias" class="chips" role="tablist" aria-label="Categorías" hidden></div>
+    </div>
     <section id="lista" class="lista" aria-live="polite">
       <div class="cupon esqueleto"></div>
       <div class="cupon esqueleto"></div>
@@ -74,22 +87,30 @@
     </section>
     <p id="vacio" class="vacio" hidden>Por ahora no hay cupones activos. Vuelve en unos minutos.</p>
 
-    <section id="agotados-sec" class="agotados" hidden>
-      <h2>Agotados hoy</h2>
+    <section id="agotados-sec" class="bloque" hidden>
+      <div class="seccion-titulo"><h2>Agotados hoy</h2></div>
       <div id="agotados" class="lista"></div>
+    </section>
+
+    <section id="historial-sec" class="bloque" hidden>
+      <div class="seccion-titulo">
+        <h2>Historial de cupones</h2>
+        <p class="seccion-sub">Todos los cupones que hemos publicado, aunque ya no estén vigentes.</p>
+      </div>
+      <div id="historial" class="lista"></div>
     </section>
   </main>
 
   <footer class="pie">
     <div class="wrap">
       <nav class="pie-links"><a href="/acerca">Quiénes somos</a><a href="/terminos">Términos</a><a href="/privacidad">Privacidad</a><a href="/acerca#contacto">Contacto</a><a href="/acerca#quejas">Reportar un problema</a></nav>
-      <p>Sitio independiente. <strong>No estamos afiliados, asociados ni patrocinados por Mercado Libre.</strong> "Mercado Libre" es marca de sus respectivos titulares y se menciona solo para indicar a qué tienda aplican los cupones. Algunos enlaces son de <a href="/acerca#afiliados">afiliado</a> y pueden generar una comisión, sin costo extra para ti. Las condiciones de cada cupón las define Mercado Libre.</p>
+      <p>Sitio independiente. <strong>No estamos afiliados, asociados ni patrocinados por Mercado Libre.</strong> "Mercado Libre" es marca de sus respectivos titulares y se menciona solo para indicar a qué tienda aplican los cupones. Algunos enlaces son de <a href="/acerca#afiliados">afiliado</a> y pueden generar una comisión, sin costo extra para ti. Las condiciones de cada cupón las define Mercado Libre. Las opiniones son de los visitantes.</p>
       <p>© <span id="anio"></span> cupones-mercadolibre.com</p>
     </div>
   </footer>
 
-  <div id="toast" class="toast" role="status" aria-live="polite">Código copiado</div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

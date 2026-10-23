@@ -1,112 +1,52 @@
-// Agente de cupones: corre en Cloudflare (Pages Functions) cada vez que alguien pide /api/cupones.
-// Lee la página de origen como mucho una vez cada 5 minutos (caché de Cloudflare),
-// extrae los cupones, detecta si están activos o agotados y les pone NUESTRO link de afiliado.
+// Agente de cupones. Lee el origen como mucho cada 5 minutos, guarda todo en la base
+// (para tener historial) y devuelve los cupones vigentes, el historial y los contadores.
 
-const ORIGEN = "https://www.cuponesmercadolibre.mx/";
-const AFILIADO = "https://www.mercadolibre.com.mx/social/maya5629565";
-const CACHE_SEGUNDOS = 300; // 5 minutos
+import { AFILIADO, hoyMX, json, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
 
-const TIPOS = {
-  dia: "Cupón del día",
-  banco: "Bancos",
-  bancos: "Bancos",
-  activable: "Activables",
-  activables: "Activables",
-};
+const VIGENTES = new Set(["activo", "pocas", "agotado", "proximamente"]);
 
-// Next.js manda los datos dentro de llamadas self.__next_f.push([1,"..."]).
-function extraerPayload(html) {
-  let texto = "";
-  const re = /self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)/g;
-  for (const m of html.matchAll(re)) {
-    try { texto += JSON.parse(`"${m[1]}"`); } catch {}
-  }
-  return texto;
-}
-
-// Devuelve la posición de la llave que cierra el objeto que empieza en i.
-function cierre(t, i) {
-  let prof = 0, enTexto = false;
-  for (let j = i; j < t.length; j++) {
-    const c = t[j];
-    if (enTexto) {
-      if (c === "\\") j++;
-      else if (c === '"') enTexto = false;
-    } else if (c === '"') enTexto = true;
-    else if (c === "{") prof++;
-    else if (c === "}" && --prof === 0) return j;
-  }
-  return -1;
-}
-
-function extraerCupones(texto) {
-  const porId = new Map();
-  const re = /\{"id":"[0-9a-f-]{36}","code":/g;
-  let m;
-  while ((m = re.exec(texto))) {
-    const fin = cierre(texto, m.index);
-    if (fin < 0) continue;
+export async function onRequestGet({ request, env }) {
+  // Sin base de datos conectada: funciona como antes, sin likes, opiniones ni historial.
+  if (!env.DB) {
     try {
-      const c = JSON.parse(texto.slice(m.index, fin + 1));
-      porId.set(c.id, c);
-    } catch {}
+      const cupones = (await leerOrigen()).filter((c) => VIGENTES.has(c.estado)).map((c) => ({ ...c, link: AFILIADO }));
+      return json({ actualizado: new Date().toISOString(), funciones: false, cupones, historial: [] });
+    } catch (e) {
+      return json({ error: String(e.message || e), cupones: [], historial: [] }, 502);
+    }
   }
-  return [...porId.values()];
-}
 
-// En los datos de Next.js "$" viene escapado como "$$".
-function limpiar(v) {
-  if (typeof v !== "string") return v ?? null;
-  return v.replace(/\$\$/g, "$").replace(/\bOF$/, "OFF").trim() || null;
-}
+  const db = env.DB;
+  await prepararDB(db);
+  const actualizado = await sincronizar(db);
+  const yo = await votante(request, env);
+  const hoy = hoyMX();
 
-function estadoDe(c) {
-  if (c.show_as_upcoming) return "proximamente";
-  if (c.sold_out) return "agotado";
-  if (c.low_stock) return "pocas";
-  return "activo";
-}
+  const [{ results: filas }, { results: misLikes }, totales] = await Promise.all([
+    db.prepare(`SELECT c.*,
+        (SELECT COUNT(*) FROM likes l WHERE l.cupon_id = c.id) AS likes,
+        (SELECT COUNT(*) FROM usos u WHERE u.cupon_id = c.id) AS usos,
+        (SELECT COUNT(*) FROM opiniones o WHERE o.cupon_id = c.id) AS opiniones
+      FROM cupones c ORDER BY c.visto_ultimo DESC LIMIT 200`).all(),
+    db.prepare("SELECT cupon_id FROM likes WHERE votante = ?1").bind(yo).all(),
+    db.prepare("SELECT (SELECT COUNT(*) FROM usos) AS usos, (SELECT COUNT(*) FROM cupones) AS cupones").first(),
+  ]);
 
-function transformar(crudos, hoy) {
-  return crudos
-    .filter((c) => c.active !== false)
-    .filter((c) => !c.expiry_date || c.expiry_date >= hoy)
-    .map((c) => ({
-      id: c.id,
-      codigo: limpiar(c.code),
-      descuento: limpiar(c.discount),
-      porcentaje: limpiar(c.discount_percent),
-      compra_minima: limpiar(c.min_purchase),
-      tope: limpiar(c.max_discount),
-      descripcion: limpiar(c.description) || "En productos seleccionados",
-      nota: limpiar(c.eligibility_note),
-      categoria: TIPOS[c.type] || limpiar(c.type) || "Cupones",
-      banco: limpiar(c.bank),
-      boton: limpiar(c.button_label),
-      link: AFILIADO,
-      vence: c.expiry_date || null,
-      publicado: (c.created_at || "").slice(0, 10),
-      destacado: !!c.featured,
-      prioridad: c.priority || 0,
-      estado: estadoDe(c),
-    }));
-}
-
-export async function onRequestGet() {
-  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
-  try {
-    const r = await fetch(ORIGEN, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; cupones-mercadolibre.com)" },
-      cf: { cacheTtl: CACHE_SEGUNDOS, cacheEverything: true },
-    });
-    if (!r.ok) throw new Error(`Origen respondió ${r.status}`);
-    const cupones = transformar(extraerCupones(extraerPayload(await r.text())), hoy);
-    if (!cupones.length) throw new Error("No se encontraron cupones");
-    return Response.json(
-      { actualizado: new Date().toISOString(), cupones },
-      { headers: { "Cache-Control": "public, max-age=60" } }
-    );
-  } catch (e) {
-    return Response.json({ error: String(e.message || e), cupones: [] }, { status: 502 });
+  const mios = new Set(misLikes.map((f) => f.cupon_id));
+  const cupones = [];
+  const historial = [];
+  for (const f of filas) {
+    const c = { ...f, link: AFILIADO, me_gusta: mios.has(f.id) };
+    const vigente = f.en_origen === 1 && VIGENTES.has(f.estado) && (!f.vence || f.vence >= hoy);
+    if (vigente) cupones.push(c);
+    else historial.push({ ...c, estado: f.estado === "vencido" || (f.vence && f.vence < hoy) ? "vencido" : "finalizado" });
   }
+
+  return json({
+    actualizado,
+    funciones: true,
+    totales: { usos: totales.usos, cupones: totales.cupones },
+    cupones,
+    historial: historial.slice(0, 60),
+  });
 }
