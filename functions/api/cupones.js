@@ -5,7 +5,7 @@ import { AFILIADO, hoyMX, json, leerOrigen, prepararDB, sincronizar, votante } f
 
 const VIGENTES = new Set(["activo", "pocas", "agotado", "proximamente"]);
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, waitUntil }) {
   // Sin base de datos conectada: funciona como antes, sin likes, opiniones ni historial.
   if (!env.DB) {
     try {
@@ -18,7 +18,12 @@ export async function onRequestGet({ request, env }) {
 
   const db = env.DB;
   await prepararDB(db);
-  const actualizado = await sincronizar(db);
+  // Si ya hay cupones guardados, respondemos al instante y revisamos el origen por detrás.
+  // Solo la primera vez (base vacía) esperamos a que termine la revisión.
+  const meta = await db.prepare("SELECT valor FROM meta WHERE clave = 'ultima_sync'").first();
+  let actualizado = meta?.valor || null;
+  if (actualizado) waitUntil(sincronizar(db));
+  else actualizado = await sincronizar(db);
   const yo = await votante(request, env);
   const hoy = hoyMX();
 
