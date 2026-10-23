@@ -12,6 +12,8 @@ const ICONO = {
   corazon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.1 4.2 2.4h2c.6-1.3 2.1-2.4 4.2-2.4 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>',
   personas: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6v1H2v-1zm15.5 1v-1c0-1.9-.7-3.6-1.9-4.9 3.4.2 6.4 2.4 6.4 5.4V21h-4.5z"/></svg>',
   globo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>',
+  candado: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1zm2 0h6V7a3 3 0 0 0-6 0v3z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7z"/></svg>',
 };
 
 let datos = { cupones: [], historial: [], funciones: false };
@@ -105,11 +107,11 @@ function tarjeta(c, i, enHistorial = false) {
   let accion = "";
   if (c.codigo && usable) {
     accion = `<div class="accion">
-        <code class="codigo ${visto ? "visto" : ""}">${escapar(visto ? c.codigo : ocultar(c.codigo))}</code>
+        <code class="codigo ${visto ? "visto" : ""}">${visto ? ICONO.check : ICONO.candado}<span>${escapar(visto ? c.codigo : ocultar(c.codigo))}</span></code>
         <button class="btn" data-ver="${escapar(c.id)}" data-codigo="${escapar(c.codigo)}" data-link="${link}">${visto ? "Copiar" : "Ver código"}</button>
       </div>`;
   } else if (c.codigo) {
-    accion = `<div class="accion"><code class="codigo">${escapar(ocultar(c.codigo))}</code></div>`;
+    accion = `<div class="accion"><code class="codigo">${ICONO.candado}<span>${escapar(ocultar(c.codigo))}</span></code></div>`;
   } else if (usable) {
     accion = `<div class="accion"><a class="btn full" href="${link}" target="_blank" rel="nofollow sponsored noopener">${escapar(c.boton || "Activar cupón")}</a></div>`;
   }
@@ -118,7 +120,11 @@ function tarjeta(c, i, enHistorial = false) {
   if (enHistorial) {
     linea = `Publicado el ${fechaCorta(c.visto_primero)} · visto por última vez el ${fechaCorta(c.visto_ultimo)}`;
   } else if (usable) {
-    linea = textoVence(c);
+    const pronto = diasHasta(c.vence || "9999-12-31") <= 0;
+    linea = [
+      c.visto_ultimo ? `Verificado ${haceCuanto(c.visto_ultimo)}` : "",
+      textoVence(c) ? `<span class="${pronto ? "pronto" : ""}">${textoVence(c)}</span>` : "",
+    ].filter(Boolean).join(" · ");
   }
 
   const social = datos.funciones ? `<div class="social">
@@ -140,7 +146,7 @@ function tarjeta(c, i, enHistorial = false) {
     <div class="cuerpo">
       <div class="fila">
         <span class="cat">${escapar(c.banco ? `${c.categoria} · ${c.banco}` : c.categoria)}</span>
-        <span class="estado estado-${c.estado}">${ETIQUETA_ESTADO[c.estado] || ""}</span>
+        <span class="estado estado-${c.estado}">${usable ? ICONO.check : ""}${ETIQUETA_ESTADO[c.estado] || ""}</span>
       </div>
       <dl class="cuadros">
         ${cuadro("Compra mínima", c.compra_minima)}
@@ -150,8 +156,8 @@ function tarjeta(c, i, enHistorial = false) {
       ${c.nota ? `<p class="nota">${escapar(c.nota)}</p>` : ""}
       ${accion}
       ${linea || usable ? `<div class="pie-cupon">
-        <span class="vence ${!enHistorial && usable && diasHasta(c.vence || "9999-12-31") <= 0 ? "pronto" : ""}">${linea}</span>
-        ${usable ? `<a class="ir" href="${link}" target="_blank" rel="nofollow sponsored noopener">Ir a Mercado Libre →</a>` : ""}
+        <span class="vence">${linea}</span>
+        ${usable ? `<a class="ir" href="${link}" target="_blank" rel="nofollow sponsored noopener" title="Abre el sitio oficial de Mercado Libre">${ICONO.candado}mercadolibre.com.mx</a>` : ""}
       </div>` : ""}
       ${social}
     </div>
@@ -194,7 +200,7 @@ function renderCategorias() {
 
 function renderVivo() {
   if (!datos.actualizado) return;
-  $("#vivo-texto").innerHTML = `<span class="largo">Actualizado </span>${haceCuanto(datos.actualizado)}`;
+  $("#vivo-texto").textContent = `actualizado ${haceCuanto(datos.actualizado)}`;
 }
 
 function buscarCupon(id) {
@@ -279,7 +285,7 @@ document.addEventListener("click", async (e) => {
     const primera = !revelados.has(id);
     revelados.add(id);
     const codigo = ver.previousElementSibling;
-    codigo.textContent = ver.dataset.codigo;
+    codigo.innerHTML = `${ICONO.check}<span>${escapar(ver.dataset.codigo)}</span>`;
     codigo.classList.add("visto");
     ver.textContent = "Copiar";
     try { await navigator.clipboard.writeText(ver.dataset.codigo); } catch {}
