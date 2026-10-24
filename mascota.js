@@ -1,5 +1,6 @@
-// Mascota: un perrito habanero blanco que camina por la parte de abajo de la pantalla,
-// sigue al cursor (o al dedo y al scroll en el celular) y a veces "ladra" con un consejo.
+// Mascota: un perrito habanero blanco que espera sentado en la esquina de abajo.
+// En computadora camina hacia el cursor y se vuelve a sentar; en el celular no cruza la pantalla:
+// se agacha mientras deslizas y vuelve a sentarse al parar. A veces "ladra" con un consejo.
 // Los mensajes salen de lo que hay en la página, así que siempre son ciertos.
 (() => {
   const CLAVE_OCULTO = "perrito-oculto-hasta";
@@ -16,6 +17,7 @@
   const SVG = `
 <svg viewBox="0 0 120 100" aria-hidden="true">
   <ellipse class="p-sombra" cx="60" cy="95" rx="34" ry="4"/>
+  <ellipse class="p-anca" cx="42" cy="84" rx="18" ry="10"/>
   <g class="p-pata p-pata-1"><rect x="34" y="70" width="10" height="23" rx="5"/></g>
   <g class="p-pata p-pata-2"><rect x="46" y="70" width="10" height="23" rx="5"/></g>
   <g class="p-pata p-pata-3"><rect x="70" y="70" width="10" height="23" rx="5"/></g>
@@ -44,7 +46,7 @@
 </svg>`;
 
   const perro = document.createElement("div");
-  perro.className = "perrito";
+  perro.className = "perrito sentado";
   perro.innerHTML = `
     <div class="perrito-globo" role="status" hidden>
       <span class="perrito-texto"></span>
@@ -117,10 +119,18 @@
       mirandoDerecha = dx > 0;
     }
     perro.classList.toggle("caminando", caminando);
+    if (caminando) perro.classList.remove("sentado");
+    else sentarLuego();
     perro.classList.toggle("a-la-izquierda", !mirandoDerecha);
     perro.classList.toggle("globo-derecha", x > innerWidth / 2);
     perro.style.transform = `translateX(${x}px)`;
     cuadro = caminando ? requestAnimationFrame(mover) : 0;
+  }
+
+  let sentarTimer = 0;
+  function sentarLuego() {
+    clearTimeout(sentarTimer);
+    sentarTimer = setTimeout(() => { if (!perro.classList.contains("caminando")) perro.classList.add("sentado"); }, 500);
   }
 
   function irA(destino) {
@@ -129,18 +139,18 @@
     if (!cuadro) cuadro = requestAnimationFrame(mover);
   }
 
-  // Con mouse, sigue al cursor; con el dedo, va hacia donde tocas y pasea al hacer scroll.
-  let ultimoScroll = scrollY;
-  addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") irA(e.clientX - ancho() / 2); }, { passive: true });
-  addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse" && !perro.contains(e.target)) irA(e.clientX - ancho() / 2); }, { passive: true });
+  const tactil = matchMedia("(pointer: coarse)");
+
+  // Con mouse, camina hacia el cursor.
+  addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" && !tactil.matches) irA(e.clientX - ancho() / 2); }, { passive: true });
+
+  // En el celular se queda en su esquina: al deslizar se agacha (baja) y al parar se vuelve a sentar.
+  let agachadoTimer = 0;
   addEventListener("scroll", () => {
-    const delta = scrollY - ultimoScroll;
-    ultimoScroll = scrollY;
-    if (matchMedia("(pointer: coarse)").matches) {
-      let destino = objetivo + delta * 0.35;
-      if (destino > innerWidth - ancho() - 8 || destino < 8) destino = limitar(destino) - Math.sign(delta) * 40;
-      irA(destino);
-    }
+    if (!tactil.matches) return;
+    perro.classList.add("agachado");
+    clearTimeout(agachadoTimer);
+    agachadoTimer = setTimeout(() => perro.classList.remove("agachado"), 420);
   }, { passive: true });
   addEventListener("resize", () => { objetivo = limitar(objetivo); x = limitar(x); perro.style.transform = `translateX(${x}px)`; });
 
