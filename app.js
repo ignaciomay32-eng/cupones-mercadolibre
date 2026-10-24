@@ -10,6 +10,7 @@ const ETIQUETA_ESTADO = {
 };
 const ICONO = {
   corazon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.1 4.2 2.4h2c.6-1.3 2.1-2.4 4.2-2.4 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>',
+  flecha: '<svg class="flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.2 5.3 19.9 12l-6.7 6.7-1.4-1.4 4.3-4.3H4v-2h12.1l-4.3-4.3z"/></svg>',
 };
 
 let datos = { cupones: [], historial: [], funciones: false };
@@ -139,7 +140,7 @@ function tarjeta(c, i, enHistorial = false) {
 
   let boton = "";
   if (usable && c.codigo) {
-    boton = `<button class="btn full" data-ver="${escapar(c.id)}" data-codigo="${escapar(c.codigo)}" data-link="${link}">Copiar e ir a Mercado Libre</button>`;
+    boton = `<button class="btn full" data-ver="${escapar(c.id)}" data-codigo="${escapar(c.codigo)}" data-link="${link}">Copiar e ir a Mercado Libre${ICONO.flecha}</button>`;
   } else if (usable) {
     boton = `<a class="btn full" href="${link}" target="_blank" rel="nofollow sponsored noopener">${escapar(c.boton || "Activar en Mercado Libre")}</a>`;
   }
@@ -180,14 +181,36 @@ function tarjeta(c, i, enHistorial = false) {
 
 // ---------- render ----------
 
+// Los cupones aparecen al entrar en pantalla, solo la primera vez (no al filtrar ni al refrescar).
+const sinMovimiento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const observador = "IntersectionObserver" in window && !sinMovimiento
+  ? new IntersectionObserver((vistas) => {
+      let n = 0;
+      for (const v of vistas) {
+        if (!v.isIntersecting) continue;
+        v.target.style.setProperty("--retraso", `${Math.min(n++, 4) * 70}ms`);
+        v.target.classList.add("visible");
+        observador.unobserve(v.target);
+      }
+    }, { rootMargin: "0px 0px -6% 0px" })
+  : null;
+if (observador) document.body.classList.add("js-anim");
+
+function entradas(animar) {
+  for (const c of document.querySelectorAll(".cupon:not(.esqueleto)")) {
+    if (animar && observador) observador.observe(c);
+    else c.classList.add("visible");
+  }
+}
+
+
 function render() {
   const lista = datos.cupones.filter((c) => categoria === "Todos" || c.categoria === categoria);
   const vigentes = lista.filter((c) => c.estado !== "agotado");
   const agotados = lista.filter((c) => c.estado === "agotado");
   const historial = datos.historial || [];
 
-  // La animación de entrada solo se ve en la primera carga, no al filtrar ni al refrescar.
-  document.body.classList.toggle("sin-animar", !primeraVez);
+  const animar = primeraVez;
   primeraVez = false;
 
   $("#lista").innerHTML = vigentes.map((c, i) => tarjeta(c, i)).join("");
@@ -196,6 +219,7 @@ function render() {
   $("#agotados-sec").hidden = agotados.length === 0;
   $("#historial-sec").hidden = historial.length === 0;
   $("#vacio").hidden = vigentes.length > 0;
+  entradas(animar);
 
 }
 
@@ -299,9 +323,11 @@ document.addEventListener("click", async (e) => {
     revelados.add(id);
     const codigo = ver.closest(".cupon").querySelector(".codigo");
     if (codigo) {
-      codigo.classList.add("visto");
+      codigo.classList.add("visto", "revela");
+      codigo.addEventListener("animationend", () => codigo.classList.remove("revela"), { once: true });
       $(".codigo-txt", codigo).textContent = ver.dataset.codigo;
     }
+    document.dispatchEvent(new CustomEvent("cupon-copiado"));
     // Copiar y abrir sin esperar nada: Safari bloquea la pestaña nueva si se abre después de un await.
     const copiado = copiar(ver.dataset.codigo);
     window.open(ver.dataset.link, "_blank", "noopener");
