@@ -304,7 +304,7 @@ button.pill:active { transform: scale(0.95); }
    Tiene su propia paleta editorial: marfil y verde oliva, igual en modo claro y oscuro. */
 .mg {
   --marfil: #f5f0e4; --panel: #ebe4d2; --tinta: #23271a; --oliva: #5d6b2e; --oliva-suave: #dfe2c6; --gris: #6b6a5c;
-  position: relative; margin: 0 0 14px; aspect-ratio: 16 / 9; overflow: hidden;
+  position: relative; margin: 16px 0 0; aspect-ratio: 16 / 9; overflow: hidden;
   border-radius: 16px; background: var(--marfil); color: var(--tinta);
 }
 .mg-escena { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; transform: scale(var(--k, .4)); transform-origin: 0 0; }
