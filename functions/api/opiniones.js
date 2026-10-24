@@ -23,11 +23,23 @@ async function listar(db, id) {
   return results;
 }
 
+// Las más recientes de todos los cupones, para la sección "Opiniones" de la portada.
+// No incluye el código del cupón: en la página el código solo se ve al tocar el botón.
+async function recientes(db) {
+  const { results } = await db.prepare(
+    `SELECT o.nombre, o.texto, o.fecha, o.cupon_id, c.descuento
+       FROM opiniones o LEFT JOIN cupones c ON c.id = o.cupon_id
+      ORDER BY o.id DESC LIMIT 20`
+  ).all();
+  return results;
+}
+
 export async function onRequestGet({ request, env }) {
   if (!env.DB) return json({ opiniones: [] });
   const db = env.DB;
   await prepararDB(db);
   const id = new URL(request.url).searchParams.get("id");
+  if (!id) return json({ opiniones: await recientes(db) });
   if (!(await existeCupon(db, id))) return json({ error: "Cupón no encontrado" }, 404);
   return json({ opiniones: await listar(db, id) });
 }
@@ -57,5 +69,5 @@ export async function onRequestPost({ request, env }) {
 
   await db.prepare("INSERT INTO opiniones (cupon_id, nombre, texto, fecha, votante) VALUES (?1, ?2, ?3, ?4, ?5)")
     .bind(id, nombre, texto, new Date().toISOString(), yo).run();
-  return json({ opiniones: await listar(db, id) });
+  return json({ opiniones: await listar(db, id), recientes: await recientes(db) });
 }
