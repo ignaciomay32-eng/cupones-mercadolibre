@@ -197,6 +197,26 @@ svg { display: block; }
 .es-historial .monto { font-size: 1.6rem; }
 .es-historial .codigo { height: 44px; }
 
+/* ---------- Temporadas de ofertas ---------- */
+.temporadas { margin-top: 8px; }
+.temp-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.temp-lista li { position: relative; background: var(--card); border-radius: 18px; padding: 18px; }
+.temp-lista h3 { margin: 0; font-size: 1.15rem; letter-spacing: -.01em; }
+.temp-fecha { margin: 2px 0 0; color: var(--accent); font-weight: 700; }
+.temp-lista p:not(.temp-fecha) { margin: 8px 0 0; color: var(--muted); }
+.temp-estado:not(:empty) {
+  display: inline-block; margin-top: 12px; padding: 4px 11px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent); font-size: .85rem; font-weight: 700;
+}
+.temp-lista .en-curso .temp-estado { background: var(--ml); color: #2b2a1e; }
+.temp-lista .terminada { opacity: .6; }
+.temp-faq { margin-top: 12px; background: var(--card); border-radius: 18px; padding: 4px 18px; }
+.temp-faq details:first-child { border-top: 0; }
+
+@media (min-width: 720px) {
+  .temp-lista { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ---------- Opiniones (sección aparte) ---------- */
 .opiniones { margin-top: 8px; }
 .op-form { display: grid; gap: 12px; background: var(--card); border-radius: 18px; padding: 18px; }

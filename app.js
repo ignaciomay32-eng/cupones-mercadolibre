@@ -349,6 +349,25 @@ $("#op-form").addEventListener("submit", (e) => {
   publicarOpinion(e.target);
 });
 
+// ---------- temporadas de ofertas ----------
+
+// Cuenta los días que faltan para cada temporada con la fecha de México.
+function renderTemporadas() {
+  for (const li of document.querySelectorAll(".temp-lista li[data-inicio]")) {
+    const inicio = diasHasta(li.dataset.inicio);
+    const fin = diasHasta(li.dataset.fin);
+    let texto = `Faltan ${inicio} días`;
+    if (fin < 0) texto = "Ya terminó";
+    else if (inicio <= 0) texto = li.dataset.inicio === li.dataset.fin ? "¡Es hoy!" : "¡Ya empezó!";
+    else if (inicio === 1) texto = "Empieza mañana";
+    li.classList.toggle("en-curso", inicio <= 0 && fin >= 0);
+    li.classList.toggle("terminada", fin < 0);
+    $(".temp-estado", li).textContent = texto;
+  }
+}
+
+renderTemporadas();
+
 // ---------- carga ----------
 
 $("#anio").textContent = new Date().getFullYear();
