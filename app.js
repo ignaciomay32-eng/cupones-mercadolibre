@@ -190,11 +190,44 @@ const observador = "IntersectionObserver" in window && !sinMovimiento
         if (!v.isIntersecting) continue;
         v.target.style.setProperty("--retraso", `${Math.min(n++, 4) * 70}ms`);
         v.target.classList.add("visible");
+        contar(v.target);
         observador.unobserve(v.target);
       }
     }, { rootMargin: "0px 0px -6% 0px" })
   : null;
 if (observador) document.body.classList.add("js-anim");
+
+// El monto cuenta desde $0 hasta su valor cuando la tarjeta aparece.
+function contar(tarjeta) {
+  const el = $(".monto", tarjeta);
+  const m = el && el.textContent.match(/^$([d,]+)$/);
+  if (!m) return;
+  const final = Number(m[1].replace(/,/g, ""));
+  const inicio = performance.now() + parseFloat(tarjeta.style.getPropertyValue("--retraso") || 0);
+  const paso = (ahora) => {
+    const p = Math.min(1, Math.max(0, (ahora - inicio) / 700));
+    el.textContent = "$" + Math.round(final * (1 - Math.pow(1 - p, 3))).toLocaleString("en-US");
+    if (p < 1) requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
+}
+
+// Con mouse, la tarjeta se inclina un poco hacia donde está el cursor.
+if (!sinMovimiento) {
+  let actual = null;
+  document.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    const tarjeta = e.target.closest?.(".cupon.visible:not(.es-apagado)");
+    if (actual && actual !== tarjeta) { actual.style.removeProperty("--rx"); actual.style.removeProperty("--ry"); }
+    actual = tarjeta;
+    if (!tarjeta) return;
+    const r = tarjeta.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    tarjeta.style.setProperty("--ry", (px * 7).toFixed(2) + "deg");
+    tarjeta.style.setProperty("--rx", (-py * 5).toFixed(2) + "deg");
+  }, { passive: true });
+}
 
 function entradas(animar) {
   for (const c of document.querySelectorAll(".cupon:not(.esqueleto)")) {

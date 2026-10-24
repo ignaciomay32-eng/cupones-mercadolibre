@@ -285,6 +285,22 @@ svg { display: block; }
 @keyframes trote { from { transform: translateY(0); } to { transform: translateY(-2px); } }
 @keyframes guau { 40% { transform: rotate(-9deg) translateY(-2px); } }
 
+/* Sentado: el cuerpo se inclina hacia atrás, las patas de atrás se vuelven el anca */
+.perrito .p-anca { fill: #fffdf7; opacity: 0; transition: opacity 200ms ease; }
+.perrito .p-cuerpo { transform-origin: 36px 84px; transition: transform 260ms var(--ease-out); }
+.perrito .p-pata-1, .perrito .p-pata-2 { transition: opacity 200ms ease; }
+.perrito .p-pata-3 rect, .perrito .p-pata-4 rect { transform-box: fill-box; transform-origin: 50% 100%; transition: transform 260ms var(--ease-out); }
+.perrito.sentado .p-anca { opacity: 1; }
+.perrito.sentado .p-pata-1, .perrito.sentado .p-pata-2 { opacity: 0; }
+.perrito.sentado .p-cuerpo { transform: rotate(-14deg); }
+.perrito.sentado .p-pata-3 rect, .perrito.sentado .p-pata-4 rect { transform: scaleY(1.5); }
+
+/* En el celular, mientras deslizas, se agacha y baja para no estorbar */
+.perrito-cuerpo { transition: transform 280ms var(--ease-out); }
+.perrito.agachado .perrito-cuerpo { transform: translateY(62%); }
+.perrito-globo { transition: opacity 150ms ease; }
+.perrito.agachado .perrito-globo { opacity: 0; }
+
 /* Globo de texto */
 .perrito-globo {
   position: absolute; bottom: calc(100% + 6px); left: 6px;
@@ -312,7 +328,7 @@ svg { display: block; }
 
 /* ---------- Animaciones de los cupones ---------- */
 /* Aparecen al entrar en pantalla (solo si el script corre; sin él, se ven normales). */
-.js-anim .cupon:not(.esqueleto) { opacity: 0; transform: translateY(16px); transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out); transition-delay: var(--retraso, 0ms); }
+.js-anim .cupon:not(.esqueleto) { opacity: 0; transform: translateY(22px) scale(.98); transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out); transition-delay: var(--retraso, 0ms); }
 .js-anim .cupon.visible { opacity: 1; transform: none; }
 .sin-animar .cupon { transition: none; }
 
@@ -334,8 +350,12 @@ svg { display: block; }
 @keyframes anillo { from { opacity: .8; transform: scale(.4); } to { opacity: 0; transform: scale(1.8); } }
 
 @media (hover: hover) and (pointer: fine) {
-  .js-anim .cupon.visible { transition: opacity 420ms var(--ease-out), transform 220ms var(--ease-out), background-color 200ms ease; }
-  .js-anim .cupon.visible:not(.es-apagado):hover { transform: translateY(-3px); }
+  .js-anim .cupon.visible { transition: opacity 420ms var(--ease-out), transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out); }
+  /* Inclinación 3D que sigue al mouse (--rx y --ry los pone app.js) */
+  .js-anim .cupon.visible:not(.es-apagado):hover {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-4px);
+    box-shadow: 0 7px 0 -1px #e4d9c1, 0 28px 38px -18px rgba(35, 39, 26, .5);
+  }
   .btn:hover .flecha { transform: translateX(4px); }
 }
 
@@ -349,6 +369,51 @@ svg { display: block; }
   .perrito .p-cola, .perrito.caminando .p-pata, .perrito.caminando .p-cuerpo, .perrito.ladrando .p-cabeza, .perrito-globo { animation: none; }
   .js-anim .cupon:not(.esqueleto) { opacity: 1; transform: none; transition: none; }
   .codigo.revela, .codigo.revela .codigo-txt, .like.activo::after { animation: none; }
+}
+
+/* ---------- Relieve tipo 3D ---------- */
+/* La tarjeta tiene contorno y un "grosor" debajo, como una pieza física; el botón se hunde al presionarlo. */
+.cupon {
+  border: 1.5px solid #e1d6bd;
+  box-shadow: 0 5px 0 -1px #e4d9c1, 0 18px 30px -18px rgba(35, 39, 26, .45);
+}
+.cupon.esqueleto { border-color: transparent; box-shadow: none; }
+.cupon.es-apagado { box-shadow: 0 3px 0 -1px #e9e1cf; }
+.btn {
+  position: relative; overflow: hidden;
+  box-shadow: 0 4px 0 #3f4a1c, inset 0 1px 0 rgba(255, 253, 247, .22);
+  transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out), filter 150ms ease, opacity 150ms ease;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #3f4a1c, inset 0 1px 0 rgba(255, 253, 247, .22); }
+.btn.full { margin-bottom: 4px; }
+.tienda { box-shadow: 0 2px 0 #cdb800; }
+.es-apagado .tienda { box-shadow: none; }
+.codigo { box-shadow: inset 0 2px 4px rgba(35, 39, 26, .07); }
+.like { box-shadow: 0 2px 0 var(--line); }
+.like:active { transform: translateY(2px); box-shadow: none; }
+
+/* Destello de luz que cruza el botón cada pocos segundos */
+.btn.full::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 253, 247, .32) 50%, transparent 65%);
+  transform: translateX(-130%);
+  animation: destello 6s ease-in-out infinite;
+  animation-delay: calc(var(--retraso, 0ms) + 1.2s);
+}
+@keyframes destello { 0%, 72% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+
+/* La etiqueta amarilla aparece de golpe y "Vence hoy" late */
+.js-anim .cupon.visible .tienda { animation: pop 460ms var(--ease-out) both; animation-delay: calc(var(--retraso, 0ms) + 180ms); }
+@keyframes pop { from { opacity: 0; transform: scale(.6) rotate(-6deg); } }
+.vence .pronto::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%;
+  background: var(--warn); vertical-align: 1px; animation: latir 1.6s ease-in-out infinite;
+}
+@keyframes latir { 50% { transform: scale(1.6); opacity: .35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn.full::after, .vence .pronto::before, .js-anim .cupon.visible .tienda { animation: none; }
+  .btn.full::after { display: none; }
 }
 
 /* Esqueleto de carga */
