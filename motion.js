@@ -90,7 +90,7 @@
 
     // El toque del dedo: aparece, aprieta y se va
     [$(".mg-dedo"), [
-      [3.9, { x: 820, y: 640, o: 0 }], [4.4, { x: 728, y: 522, o: 1 }],
+      [3.9, { x: 820, y: 640, o: 0 }], [4.4, { x: 600, y: 585, o: 1 }],
       [4.55, { s: 0.72 }], [4.8, { s: 1.2 }], [5.1, { s: 1, o: 0 }],
       [12.9, { x: 560, y: 840, o: 0 }], [13.4, { x: 470, y: 760, o: 1 }],
       [13.55, { s: 0.72 }], [13.8, { s: 1.2 }], [14.1, { s: 1, o: 0 }],
@@ -103,7 +103,7 @@
 
   // La cámara del panel: acerca y aleja sobre lo que importa en cada paso.
   const camara = [
-    [0, { x: 470, y: 450, s: 1 }], [3.4, {}], [4.4, { x: 470, y: 470, s: 1.22 }],
+    [0, { x: 470, y: 450, s: 1 }], [3.4, {}], [4.4, { x: 470, y: 480, s: 1.2 }],
     [6.6, {}], [7.9, { x: 470, y: 450, s: 1 }],
     [11.3, {}], [12.4, { x: 470, y: 600, s: 1.28 }],
     [14.5, {}], [15.3, { x: 470, y: 450, s: 1 }],
@@ -113,7 +113,7 @@
 
   // El código copiado viaja del cupón al teléfono y cae en el campo de cupones.
   const chip = [
-    [6.9, { x: 489, y: 513, s: 0.9, o: 0 }], [7.2, { s: 1, o: 1 }],
+    [6.9, { x: 580, y: 513, s: 0.9, o: 0 }], [7.2, { s: 1, o: 1 }],
     [8.3, { x: 770, y: 115, s: 0.8 }],
     [15.9, {}], [16.35, { x: 420, y: 418, s: 0.7 }], [16.45, { o: 0 }],
   ];
@@ -123,7 +123,6 @@
     chip: $(".mg-chip"),
     codigo: $(".mg-codigo"),
     codigoTxt: $("[data-codigo]"),
-    ver: $("[data-ver]"),
     giro: $(".mg-giro"),
     carrito: $("[data-carrito]"),
     campo: $(".mg-campo"),
@@ -147,7 +146,6 @@
     const visto = t >= 4.65;
     el.codigo.classList.toggle("on", visto);
     cambiar(el.codigoTxt, visto ? "AHORROMAX" : "AHO••••••");
-    cambiar(el.ver, visto ? "Copiar" : "Ver código");
     el.giro.style.transform = `rotate(${t * 420}deg)`;
 
     const agregado = t >= 13.6;

@@ -1,4 +1,4 @@
-// Cuenta cuántas personas tocaron "Ver código" en cada cupón (cada persona cuenta una vez).
+// Cuenta cuántas personas tocaron "Copiar e ir a Mercado Libre" en cada cupón (cada persona cuenta una vez).
 
 import { existeCupon, json, leerCuerpo, mismoOrigen, prepararDB, votante } from "../_lib/comun.js";
 

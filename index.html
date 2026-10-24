@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -91,7 +91,7 @@
                 <p class="mg-titulo">Así se usa<br>un cupón</p>
                 <p class="mg-lead">Cuatro pasos, menos de un minuto.</p>
               </div>
-              <div class="mg-bloque" data-b="1"><span class="mg-n">1</span><p class="mg-h">Toca «Ver&nbsp;código»</p><p class="mg-lead">Aparece completo y se copia solo.</p></div>
+              <div class="mg-bloque" data-b="1"><span class="mg-n">1</span><p class="mg-h">Toca el botón del cupón</p><p class="mg-lead">«Copiar e ir a Mercado Libre» copia el código por ti.</p></div>
               <div class="mg-bloque" data-b="2"><span class="mg-n">2</span><p class="mg-h">Se abre Mercado&nbsp;Libre</p><p class="mg-lead">En una pestaña nueva, en mercadolibre.com.mx.</p></div>
               <div class="mg-bloque" data-b="3"><span class="mg-n">3</span><p class="mg-h">Elige tu producto</p><p class="mg-lead">Revisa que llegue a la compra mínima: $4,800.</p></div>
               <div class="mg-bloque" data-b="4"><span class="mg-n">4</span><p class="mg-h">Pega el código al&nbsp;pagar</p><p class="mg-lead">En el resumen de compra, en «Cupones».</p></div>
@@ -111,7 +111,7 @@
                   <div class="mg-cuerpo">
                     <div class="mg-fila"><span>Cupón del día</span><i>Activo</i></div>
                     <div class="mg-datos"><div><small>Compra mínima</small>$4,800</div><div><small>Descuento</small>10%</div><div><small>Tope</small>$480</div></div>
-                    <div class="mg-accion"><span class="mg-codigo"><span data-codigo>AHO••••••</span></span><span class="mg-btn" data-ver>Ver código</span></div>
+                    <div class="mg-accion"><span class="mg-codigo"><span data-codigo>AHO••••••</span></span><span class="mg-btn">Copiar e ir a Mercado Libre</span></div>
                   </div>
                 </div>
                 <div class="mg-chip">AHORROMAX</div>
@@ -175,7 +175,7 @@
       <section id="como" class="como" aria-labelledby="como-t">
         <h2 id="como-t">Cómo usar un cupón</h2>
         <ol class="pasos">
-          <li><strong>Toca "Ver código"</strong><span>Aparece completo y se copia solo.</span></li>
+          <li><strong>Toca "Copiar e ir a Mercado Libre"</strong><span>El código se copia solo.</span></li>
           <li><strong>Se abre Mercado Libre</strong><span>En una pestaña nueva, en mercadolibre.com.mx.</span></li>
           <li><strong>Elige tu producto</strong><span>Revisa que llegue a la compra mínima del cupón.</span></li>
           <li><strong>Pega el código al pagar</strong><span>En el resumen de compra, en "Cupones".</span></li>
@@ -185,6 +185,30 @@
       <section id="agotados-sec" class="bloque" hidden>
         <div class="seccion-titulo"><h2>Agotados hoy</h2></div>
         <div id="agotados" class="lista"></div>
+      </section>
+
+      <section id="opiniones-sec" class="opiniones" aria-labelledby="op-t" hidden>
+        <div class="seccion-titulo">
+          <h2 id="op-t">Opiniones</h2>
+          <p class="seccion-sub">¿Te funcionó un cupón? Cuéntalo para ayudar a otros.</p>
+        </div>
+        <form id="op-form" class="op-form">
+          <label class="op-campo">Cupón
+            <select id="op-cupon" name="cupon" required></select>
+          </label>
+          <label class="op-campo"><span>Tu nombre <small>(opcional)</small></span>
+            <input name="nombre" maxlength="30" autocomplete="nickname">
+          </label>
+          <label class="op-campo">Tu opinión
+            <textarea name="texto" maxlength="280" rows="3" required placeholder="¿Te funcionó? ¿Con qué compra lo usaste?"></textarea>
+          </label>
+          <div class="op-acciones">
+            <span class="op-regla">Sin enlaces ni datos personales.</span>
+            <button class="btn btn-chico" type="submit">Publicar</button>
+          </div>
+          <p class="op-error" role="alert" hidden></p>
+        </form>
+        <ul id="op-lista" class="op-lista"></ul>
       </section>
 
       <section id="historial-sec" class="bloque" hidden>
@@ -242,7 +266,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=10"></script>
-  <script src="motion.js?v=9" defer></script>
+  <script src="app.js?v=11"></script>
+  <script src="motion.js?v=11" defer></script>
 </body>
 </html>
