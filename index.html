@@ -20,8 +20,8 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230b6b4a' d='M12 1 3 5v6c0 5.6 3.8 10.7 9 12 5.2-1.3 9-6.4 9-12V5l-9-4z'/><path fill='white' d='m10.4 15.6-3.5-3.5 1.4-1.4 2.1 2.1 5.3-5.3 1.4 1.4z'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=9">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -106,10 +106,82 @@
 
       <section id="como" class="como" aria-labelledby="como-t">
         <h2 id="como-t">Cómo usar un cupón</h2>
+
+        <figure class="mg" id="mg" aria-label="Animación de 27 segundos: cómo usar un cupón, paso a paso. Los mismos pasos están escritos debajo.">
+          <div class="mg-escena" aria-hidden="true">
+            <!-- Columna de texto -->
+            <div class="mg-texto">
+              <div class="mg-bloque" data-b="titulo">
+                <p class="mg-titulo">Así se usa<br>un cupón</p>
+                <p class="mg-lead">Cuatro pasos, menos de un minuto.</p>
+              </div>
+              <div class="mg-bloque" data-b="1"><span class="mg-n">1</span><p class="mg-h">Toca «Ver&nbsp;código»</p><p class="mg-lead">Aparece completo y se copia solo.</p></div>
+              <div class="mg-bloque" data-b="2"><span class="mg-n">2</span><p class="mg-h">Se abre Mercado&nbsp;Libre</p><p class="mg-lead">En una pestaña nueva, en mercadolibre.com.mx.</p></div>
+              <div class="mg-bloque" data-b="3"><span class="mg-n">3</span><p class="mg-h">Elige tu producto</p><p class="mg-lead">Revisa que llegue a la compra mínima: $4,800.</p></div>
+              <div class="mg-bloque" data-b="4"><span class="mg-n">4</span><p class="mg-h">Pega el código al&nbsp;pagar</p><p class="mg-lead">En el resumen de compra, en «Cupones».</p></div>
+              <div class="mg-bloque" data-b="final">
+                <p class="mg-titulo">Ahorraste <em data-total-ahorro>$480</em></p>
+                <p class="mg-lead">Los cupones de hoy, revisados cada 5 minutos, en <span class="nowrap">cupones-mercadolibre.com</span></p>
+                <p class="mg-nota">Sitio independiente, no afiliado a Mercado Libre.</p>
+              </div>
+            </div>
+
+            <!-- Panel con la cámara -->
+            <div class="mg-panel">
+              <div class="mg-camara">
+                <!-- El cupón, como se ve en este sitio -->
+                <div class="mg-ticket">
+                  <div class="mg-talon"><b>$480</b><span>de descuento</span></div>
+                  <div class="mg-cuerpo">
+                    <div class="mg-fila"><span>Cupón del día</span><i>Activo</i></div>
+                    <div class="mg-datos"><div><small>Compra mínima</small>$4,800</div><div><small>Descuento</small>10%</div><div><small>Tope</small>$480</div></div>
+                    <div class="mg-accion"><span class="mg-codigo"><span data-codigo>AHO••••••</span></span><span class="mg-btn" data-ver>Ver código</span></div>
+                  </div>
+                </div>
+                <div class="mg-chip">AHORROMAX</div>
+
+                <!-- El teléfono -->
+                <div class="mg-tel">
+                  <div class="mg-pantalla">
+                    <div class="mg-barra"><span class="mg-candado"></span>mercadolibre.com.mx</div>
+                    <div class="mg-vista" data-v="carga"><span class="mg-giro"></span><p>Abriendo Mercado Libre…</p></div>
+                    <div class="mg-vista" data-v="producto">
+                      <div class="mg-foto"><svg viewBox="0 0 200 160"><path d="M40 100V82a60 60 0 0 1 120 0v18" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/><rect x="22" y="92" width="40" height="56" rx="16"/><rect x="138" y="92" width="40" height="56" rx="16"/></svg></div>
+                      <p class="mg-prod">Audífonos inalámbricos con cancelación de ruido</p>
+                      <p class="mg-precio">$5,299</p>
+                      <p class="mg-envio">Envío gratis</p>
+                      <span class="mg-btn mg-btn-ancho" data-carrito>Agregar al carrito</span>
+                    </div>
+                    <div class="mg-vista" data-v="pago">
+                      <p class="mg-resumen">Resumen de compra</p>
+                      <div class="mg-linea"><span>Producto</span><span>$5,299</span></div>
+                      <div class="mg-linea"><span>Envío</span><span class="mg-verde">Gratis</span></div>
+                      <p class="mg-etq">Cupones</p>
+                      <div class="mg-campo"><span data-campo>Ingresa el código</span><span class="mg-aplicar" data-aplicar>Aplicar</span></div>
+                      <div class="mg-linea mg-cupon" data-linea-cupon><span>Cupón AHORROMAX</span><span>−$480</span></div>
+                      <div class="mg-linea mg-total"><span>Total</span><span data-total>$5,299</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <span class="mg-dedo"></span>
+              </div>
+              <div class="mg-toast">Código AHORROMAX copiado</div>
+            </div>
+            <span class="mg-ilustrativo">Ejemplo ilustrativo</span>
+            <div class="mg-progreso"><span></span></div>
+          </div>
+          <button class="mg-control" type="button" aria-label="Pausar la animación" data-estado="play">
+            <svg class="i-pausa" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3v14H7zm7 0h3v14h-3z"/></svg>
+            <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </figure>
+
         <ol class="pasos">
           <li><strong>Toca "Ver código"</strong><span>Aparece completo y se copia solo.</span></li>
           <li><strong>Se abre Mercado Libre</strong><span>En una pestaña nueva, en mercadolibre.com.mx.</span></li>
-          <li><strong>Pégalo al pagar</strong><span>En el campo de cupón, al finalizar tu compra.</span></li>
+          <li><strong>Elige tu producto</strong><span>Revisa que llegue a la compra mínima del cupón.</span></li>
+          <li><strong>Pega el código al pagar</strong><span>En el resumen de compra, en "Cupones".</span></li>
         </ol>
       </section>
 
@@ -173,6 +245,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
+  <script src="motion.js?v=9" defer></script>
 </body>
 </html>

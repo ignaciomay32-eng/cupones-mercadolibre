@@ -97,7 +97,7 @@ svg { display: block; }
 /* ---------- Cómo funciona ---------- */
 .como { margin-top: 48px; }
 .como h2 { margin: 0 0 14px; font-size: 1.35rem; letter-spacing: -.02em; font-weight: 800; }
-.pasos { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; counter-reset: paso; }
+.pasos { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; counter-reset: paso; }
 .pasos li { counter-increment: paso; position: relative; background: var(--card); border-radius: 12px; padding: 16px 16px 16px 56px; }
 .pasos li::before {
   content: counter(paso); position: absolute; left: 16px; top: 15px;
@@ -299,6 +299,102 @@ button.pill:active { transform: scale(0.95); }
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1zm2 0h6V7a3 3 0 0 0-6 0v3z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
+/* ---------- Animación "Cómo usar un cupón" ----------
+   Escena fija de 1600×900 escalada al ancho del contenedor (--k lo pone motion.js).
+   Tiene su propia paleta editorial: marfil y verde oliva, igual en modo claro y oscuro. */
+.mg {
+  --marfil: #f5f0e4; --panel: #ebe4d2; --tinta: #23271a; --oliva: #5d6b2e; --oliva-suave: #dfe2c6; --gris: #6b6a5c;
+  position: relative; margin: 0 0 14px; aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: 16px; background: var(--marfil); color: var(--tinta);
+}
+.mg-escena { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; transform: scale(var(--k, .4)); transform-origin: 0 0; }
+.mg-escena * { box-sizing: border-box; }
+.mg-escena > *, .mg-camara > *, .mg-texto > * { position: absolute; }
+.mg-escena [data-anim] { will-change: transform, opacity; }
+
+/* Texto */
+.mg-texto { left: 0; top: 0; width: 660px; height: 900px; }
+.mg-bloque { left: 96px; top: 0; bottom: 0; width: 520px; display: flex; flex-direction: column; justify-content: center; opacity: 0; }
+.mg-titulo, .mg-h { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; margin: 0; letter-spacing: -.01em; color: var(--tinta); }
+.mg-titulo { font-size: 128px; line-height: .95; }
+.mg-titulo em { color: var(--oliva); }
+.mg-h { font-size: 96px; line-height: .98; }
+.mg-n { font-family: "Instrument Serif", Georgia, serif; font-size: 64px; line-height: 1; color: var(--oliva); margin-bottom: 18px; }
+.mg-lead { margin: 28px 0 0; font-size: 32px; line-height: 1.35; color: var(--tinta); }
+.mg-nota { margin: 24px 0 0; font-size: 22px; color: var(--gris); }
+
+/* Panel y cámara */
+.mg-panel { left: 660px; top: 0; width: 940px; height: 900px; background: var(--panel); overflow: hidden; }
+.mg-panel > * { position: absolute; }
+.mg-camara { left: 0; top: 0; width: 940px; height: 900px; transform-origin: 0 0; }
+.mg-ilustrativo { left: 96px; bottom: 40px; font-size: 20px; color: var(--gris); }
+
+/* Cupón */
+.mg-ticket { left: 100px; top: 320px; width: 740px; height: 270px; display: flex; background: #fffdf7; border-radius: 28px; overflow: hidden; opacity: 0; }
+.mg-talon { width: 220px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--oliva-suave); color: var(--oliva); }
+.mg-talon b { font-size: 64px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.mg-talon span { font-size: 22px; font-weight: 600; margin-top: 6px; }
+.mg-cuerpo { flex: 1; padding: 26px 30px; display: flex; flex-direction: column; gap: 18px; }
+.mg-fila { display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: 600; color: var(--gris); }
+.mg-fila i { font-style: normal; font-size: 19px; font-weight: 700; color: var(--oliva); background: var(--oliva-suave); padding: 4px 14px; border-radius: 999px; }
+.mg-datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 25px; font-weight: 800; }
+.mg-datos div { background: var(--marfil); border-radius: 12px; padding: 8px 12px; }
+.mg-datos small { display: block; font-size: 17px; font-weight: 400; color: var(--gris); }
+.mg-accion { display: flex; gap: 12px; }
+.mg-codigo { flex: 1; display: flex; align-items: center; padding: 0 18px; height: 62px; border-radius: 14px; background: var(--marfil); font-family: ui-monospace, Consolas, monospace; font-size: 26px; font-weight: 700; letter-spacing: .08em; transition: background-color .3s, color .3s; }
+.mg-codigo.on { background: var(--oliva-suave); color: var(--oliva); }
+.mg-btn { display: inline-flex; align-items: center; justify-content: center; height: 62px; padding: 0 28px; border-radius: 14px; background: var(--oliva); color: #fffdf7; font-size: 24px; font-weight: 700; white-space: nowrap; transition: background-color .3s; }
+.mg-btn.on { background: var(--tinta); }
+.mg-chip { left: 0; top: 0; padding: 14px 24px; border-radius: 999px; background: var(--oliva); color: #fffdf7; font-family: ui-monospace, Consolas, monospace; font-size: 26px; font-weight: 700; letter-spacing: .08em; opacity: 0; }
+
+/* Teléfono */
+.mg-tel { left: 280px; top: 60px; width: 380px; height: 780px; border-radius: 56px; background: var(--tinta); padding: 14px; opacity: 0; }
+.mg-pantalla { position: relative; width: 100%; height: 100%; border-radius: 44px; background: #fffdf7; overflow: hidden; }
+.mg-barra { position: absolute; left: 18px; right: 18px; top: 26px; height: 46px; border-radius: 23px; background: var(--marfil); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 19px; font-weight: 600; color: var(--tinta); }
+.mg-candado { width: 14px; height: 16px; border-radius: 3px; background: var(--oliva); position: relative; }
+.mg-candado::before { content: ""; position: absolute; left: 3px; top: -7px; width: 8px; height: 9px; border: 2.5px solid var(--oliva); border-bottom: 0; border-radius: 6px 6px 0 0; }
+.mg-vista { position: absolute; left: 0; right: 0; top: 92px; bottom: 0; padding: 0 24px; opacity: 0; }
+.mg-vista[data-v="carga"] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding-bottom: 92px; font-size: 22px; color: var(--gris); }
+.mg-giro { width: 54px; height: 54px; border-radius: 50%; border: 6px solid var(--oliva-suave); border-top-color: var(--oliva); }
+.mg-foto { height: 270px; border-radius: 22px; background: var(--marfil); display: grid; place-items: center; color: var(--tinta); }
+.mg-foto svg { width: 190px; fill: var(--tinta); }
+.mg-prod { margin: 22px 0 0; font-size: 23px; line-height: 1.3; }
+.mg-precio { margin: 12px 0 0; font-size: 44px; font-weight: 800; letter-spacing: -.02em; }
+.mg-envio { margin: 2px 0 0; font-size: 20px; font-weight: 600; color: var(--oliva); }
+.mg-btn-ancho { position: absolute; left: 24px; right: 24px; bottom: 40px; }
+.mg-resumen { margin: 10px 0 18px; font-size: 30px; font-weight: 800; }
+.mg-linea { display: flex; justify-content: space-between; font-size: 22px; padding: 10px 0; }
+.mg-verde { color: var(--oliva); font-weight: 700; }
+.mg-etq { margin: 22px 0 10px; font-size: 20px; font-weight: 700; color: var(--gris); }
+.mg-campo { display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 8px 0 18px; border-radius: 14px; background: var(--marfil); font-size: 20px; color: var(--gris); }
+.mg-campo.on { color: var(--tinta); font-family: ui-monospace, Consolas, monospace; font-weight: 700; letter-spacing: .06em; box-shadow: inset 0 0 0 2px var(--oliva); }
+.mg-aplicar { height: 48px; padding: 0 18px; border-radius: 10px; background: var(--oliva); color: #fffdf7; display: grid; place-items: center; font-family: Inter, sans-serif; font-size: 19px; font-weight: 700; letter-spacing: 0; }
+.mg-cupon { color: var(--oliva); font-weight: 700; opacity: 0; }
+.mg-total { margin-top: 12px; padding-top: 18px; font-size: 30px; font-weight: 800; }
+
+/* Toque, aviso y progreso */
+.mg-dedo { left: 0; top: 0; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; background: rgba(35, 39, 26, .22); box-shadow: 0 0 0 3px rgba(255, 253, 247, .9); opacity: 0; }
+.mg-toast { left: 0; right: 0; margin: 0 auto; width: max-content; top: 780px; padding: 18px 30px; border-radius: 999px; background: var(--tinta); color: #fffdf7; font-size: 26px; font-weight: 600; white-space: nowrap; opacity: 0; }
+.mg.chico .mg-lead, .mg.chico .mg-nota { display: none; }
+.mg.chico .mg-ilustrativo { font-size: 38px; bottom: 44px; }
+.mg.chico .mg-h { font-size: 120px; }
+.mg.chico .mg-titulo { font-size: 150px; }
+.mg.chico .mg-n { font-size: 90px; }
+.mg.chico .mg-control { width: 34px; height: 34px; right: 8px; bottom: 10px; }
+.mg-progreso { left: 0; right: 0; bottom: 0; height: 6px; background: rgba(93, 107, 46, .15); }
+.mg-progreso span { display: block; height: 100%; width: 100%; background: var(--oliva); transform-origin: 0 0; transform: scaleX(0); }
+
+.mg-control {
+  position: absolute; right: 10px; bottom: 14px; z-index: 2;
+  width: 40px; height: 40px; border: 0; border-radius: 50%; cursor: pointer;
+  display: grid; place-items: center; background: rgba(35, 39, 26, .78); color: #fffdf7;
+  transition: transform 140ms var(--ease-out), background-color 150ms ease;
+}
+.mg-control:active { transform: scale(0.94); }
+.mg-control svg { width: 18px; height: 18px; fill: currentColor; }
+.mg-control[data-estado="play"] .i-play, .mg-control[data-estado="pausa"] .i-pausa { display: none; }
+@media (hover: hover) and (pointer: fine) { .mg-control:hover { background: var(--tinta, #23271a); } }
+
 /* ---------- Páginas legales ---------- */
 .volver { font-size: .88rem; font-weight: 600; color: var(--muted); text-decoration: none; }
 .volver:hover { color: var(--text); }
@@ -362,6 +458,7 @@ button.pill:active { transform: scale(0.95); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .mg-codigo, .mg-btn { transition: none; }
   .cupon, .esqueleto, .like.activo svg { animation: none; }
   .toast { transition: opacity 200ms ease; transform: translate(-50%, 0); }
 }
