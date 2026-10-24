@@ -1,38 +1,23 @@
+/* Paleta marfil y verde oliva, siempre clara (también con el celular en modo oscuro). */
 :root {
-  --bg: #f4f6f8;
-  --card: #ffffff;
-  --text: #0f1b2d;
-  --muted: #5b6676;
-  --line: #e2e6eb;
-  --soft: #f0f3f6;
-  --accent: #0b6b4a;
-  --accent-ink: #ffffff;
-  --accent-soft: #e7f4ee;
-  --accent-line: #bfe0d0;
-  --warn: #b45309;
-  --warn-soft: #fdf3e4;
-  --heart: #e11d48;
-  --heart-soft: #fde8ee;
+  color-scheme: light;
+  --bg: #f5f0e4;
+  --card: #fffdf7;
+  --text: #23271a;
+  --muted: #5f5e50;
+  --line: #e3dcc9;
+  --soft: #efe9da;
+  --accent: #5d6b2e;
+  --accent-ink: #fffdf7;
+  --accent-soft: #e6e8cf;
+  --accent-line: #cdd2a8;
+  --warn: #9a4a0c;
+  --warn-soft: #f8ead8;
+  --heart: #c2263f;
+  --heart-soft: #f9e3e3;
+  --ml: #ffe600;
   --radius: 14px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0d1117;
-    --card: #161b22;
-    --text: #e8edf3;
-    --muted: #97a3b2;
-    --line: #2a313b;
-    --soft: #1c222b;
-    --accent: #3fcf95;
-    --accent-ink: #052016;
-    --accent-soft: #12302a;
-    --accent-line: #1f5a45;
-    --warn: #f5a524;
-    --warn-soft: #33260f;
-    --heart: #fb7185;
-    --heart-soft: #3a1820;
-  }
 }
 
 * { box-sizing: border-box; }
@@ -128,7 +113,7 @@ svg { display: block; }
 .lista { display: grid; gap: 14px; }
 .cupon {
   display: grid;
-  grid-template-columns: 140px 1fr;
+  grid-template-columns: 160px 1fr;
   background: var(--card);
   border-radius: var(--radius);
   overflow: hidden;
@@ -157,6 +142,13 @@ svg { display: block; }
 .talon::after { bottom: -8px; }
 .monto { font-size: 1.75rem; font-weight: 800; letter-spacing: -.035em; line-height: 1; }
 .monto-sufijo { margin-top: 4px; font-size: .85rem; font-weight: 600; }
+/* Dónde se usa el cupón: etiqueta de texto, sin el logotipo de Mercado Libre. */
+.tienda {
+  margin-top: 12px; padding: 5px 10px; border-radius: 10px;
+  background: var(--ml); color: #2b2a1e;
+  font-size: .8125rem; font-weight: 700; line-height: 1.2; text-align: center;
+}
+.es-apagado .tienda { background: var(--line); color: var(--muted); }
 
 .cuerpo { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -249,7 +241,7 @@ button.pill:active { transform: scale(0.95); }
 .es-apagado .talon { background: var(--soft); color: var(--muted); border-right-color: var(--line); }
 .es-apagado .monto { text-decoration: line-through; text-decoration-thickness: 2px; }
 .es-apagado .codigo { color: var(--muted); }
-.es-historial { grid-template-columns: 112px 1fr; }
+.es-historial { grid-template-columns: 132px 1fr; }
 .es-historial .monto { font-size: 1.3rem; }
 .es-historial .cuerpo { padding: 14px 16px; gap: 10px; }
 .es-historial .codigo { height: 38px; font-size: .92rem; }
@@ -334,6 +326,7 @@ button.pill:active { transform: scale(0.95); }
 .mg-talon { width: 220px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--oliva-suave); color: var(--oliva); }
 .mg-talon b { font-size: 64px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
 .mg-talon span { font-size: 22px; font-weight: 600; margin-top: 6px; }
+.mg-tienda { margin-top: 14px; padding: 6px 12px; border-radius: 10px; background: #ffe600; color: #2b2a1e; font-style: normal; font-size: 17px; font-weight: 700; line-height: 1.2; text-align: center; }
 .mg-cuerpo { flex: 1; padding: 26px 30px; display: flex; flex-direction: column; gap: 18px; }
 .mg-fila { display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: 600; color: var(--gris); }
 .mg-fila i { font-style: normal; font-size: 19px; font-weight: 700; color: var(--oliva); background: var(--oliva-suave); padding: 4px 14px; border-radius: 999px; }
@@ -443,6 +436,11 @@ button.pill:active { transform: scale(0.95); }
     flex-direction: row; gap: 8px; align-items: baseline; justify-content: flex-start;
     padding: 14px 16px; border-right: 0; border-bottom: 1px solid var(--accent-line);
   }
+  /* En celular: el monto a la izquierda; "de descuento" y la etiqueta, apilados a su lado. */
+  .talon { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; justify-items: start; }
+  .monto { grid-row: 1 / 3; }
+  .monto-sufijo { margin: 0; align-self: end; }
+  .tienda { margin: 4px 0 0; align-self: start; white-space: nowrap; }
   .talon::before, .talon::after { top: auto; bottom: -8px; }
   .talon::before { left: -8px; right: auto; }
   .talon::after { right: -8px; }

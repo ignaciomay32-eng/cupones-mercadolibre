@@ -160,6 +160,7 @@ function tarjeta(c, i, enHistorial = false) {
     <div class="talon">
       <span class="monto">${escapar(monto)}</span>
       ${sufijo ? `<span class="monto-sufijo">de descuento</span>` : ""}
+      <span class="tienda">Válido en Mercado Libre</span>
     </div>
     <div class="cuerpo">
       <div class="fila">
