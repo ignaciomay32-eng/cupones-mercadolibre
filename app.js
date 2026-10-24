@@ -19,6 +19,7 @@ const ICONO = {
 let datos = { cupones: [], historial: [], funciones: false };
 let categoria = "Todos";
 let primeraVez = true;
+let reintentado = false;
 const revelados = new Set();
 
 // ---------- utilidades ----------
@@ -68,6 +69,23 @@ function numero(n) {
 function partirMonto(descuento) {
   const m = (descuento || "").match(/^(.+?)\s+(OFF)$/i);
   return m ? [m[1], m[2].toUpperCase()] : [descuento || "Cupón", ""];
+}
+
+// Copia en el mismo instante del toque (funciona en todos los navegadores) y, si no se pudo,
+// intenta con la API del portapapeles. Devuelve si la copia síncrona funcionó.
+function copiar(texto) {
+  const area = document.createElement("textarea");
+  area.value = texto;
+  area.setAttribute("readonly", "");
+  area.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+  document.body.appendChild(area);
+  area.select();
+  area.setSelectionRange(0, texto.length);
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch {}
+  area.remove();
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(texto).catch(() => {});
+  return ok;
 }
 
 let toastTimer;
@@ -131,7 +149,7 @@ function tarjeta(c, i, enHistorial = false) {
       <button class="pill like ${c.me_gusta ? "activo" : ""}" data-like="${escapar(c.id)}" aria-pressed="${!!c.me_gusta}" aria-label="Me gusta">
         ${ICONO.corazon}<span>${numero(c.likes)}</span>
       </button>
-      <span class="pill dato" title="Personas que tocaron Ver código en este sitio">${ICONO.personas}<span><b data-usos="${escapar(c.id)}">${numero(c.usos)}</b> ${c.usos === 1 ? "persona lo usó" : "personas lo usaron"}</span></span>
+      <span class="pill dato" title="Personas que tocaron Ver código en este sitio">${ICONO.personas}<span><b data-usos="${escapar(c.id)}">${numero(c.usos)}</b> ${c.usos === 1 ? "persona lo copió" : "personas lo copiaron"}</span></span>
       <button class="pill opinar" data-opinar="${escapar(c.id)}" aria-expanded="false">
         ${ICONO.globo}<span>${c.opiniones ? `Opiniones (${numero(c.opiniones)})` : "Deja tu opinión"}</span>
       </button>
@@ -141,7 +159,7 @@ function tarjeta(c, i, enHistorial = false) {
   return `<article class="cupon ${apagado ? "es-apagado" : ""} ${enHistorial ? "es-historial" : ""}" style="--i:${i}">
     <div class="talon">
       <span class="monto">${escapar(monto)}</span>
-      ${sufijo ? `<span class="monto-sufijo">${sufijo}</span>` : ""}
+      ${sufijo ? `<span class="monto-sufijo">de descuento</span>` : ""}
     </div>
     <div class="cuerpo">
       <div class="fila">
@@ -183,24 +201,21 @@ function render() {
   $("#historial-sec").hidden = historial.length === 0;
   $("#vacio").hidden = vigentes.length > 0;
 
-  const activos = datos.cupones.filter((c) => c.estado === "activo" || c.estado === "pocas").length;
-  $("#st-activos").textContent = numero(activos);
-  $("#st-usos").textContent = datos.totales ? numero(datos.totales.usos) : "–";
-  $("#st-historial").textContent = datos.totales ? numero(datos.totales.cupones) : "–";
-  $("#stats").hidden = !datos.funciones;
 }
 
 function renderCategorias() {
   const cats = [...new Set(datos.cupones.map((c) => c.categoria))];
   $("#categorias").hidden = cats.length < 2;
   $("#categorias").innerHTML = ["Todos", ...cats]
-    .map((c) => `<button class="chip" role="tab" aria-selected="${c === categoria}">${escapar(c)}</button>`)
+    .map((c) => `<button class="chip" aria-pressed="${c === categoria}">${escapar(c)}</button>`)
     .join("");
 }
 
 function renderVivo() {
   if (!datos.actualizado) return;
-  $("#vivo-texto").textContent = `actualizado ${haceCuanto(datos.actualizado)}`;
+  const activos = datos.cupones.filter((c) => c.estado === "activo" || c.estado === "pocas").length;
+  const cuantos = activos === 1 ? "1 cupón activo" : `${numero(activos)} cupones activos`;
+  $("#vivo-texto").textContent = `${cuantos} · revisados ${haceCuanto(datos.actualizado)}`;
 }
 
 function buscarCupon(id) {
@@ -288,9 +303,12 @@ document.addEventListener("click", async (e) => {
     codigo.innerHTML = `${ICONO.check}<span>${escapar(ver.dataset.codigo)}</span>`;
     codigo.classList.add("visto");
     ver.textContent = "Copiar";
-    try { await navigator.clipboard.writeText(ver.dataset.codigo); } catch {}
-    avisar(`Código ${ver.dataset.codigo} copiado`);
+    // Copiar y abrir sin esperar nada: Safari bloquea la pestaña nueva si se abre después de un await.
+    const copiado = copiar(ver.dataset.codigo);
     window.open(ver.dataset.link, "_blank", "noopener");
+    avisar(copiado
+      ? `Código ${ver.dataset.codigo} copiado · abriendo mercadolibre.com.mx`
+      : `Copia el código ${ver.dataset.codigo} · abriendo mercadolibre.com.mx`);
     if (primera && datos.funciones) {
       enviar("/api/usar", { id }).then((r) => {
         const c = buscarCupon(id);
@@ -343,8 +361,6 @@ document.addEventListener("submit", (e) => {
 // ---------- carga ----------
 
 $("#anio").textContent = new Date().getFullYear();
-const fecha = new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Mexico_City" });
-$("#fecha").textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
 
 function hayOpinionAbierta() {
   return [...document.querySelectorAll(".opiniones")].some((p) => !p.hidden);
@@ -368,6 +384,13 @@ function cargar({ automatica = false } = {}) {
       renderCategorias();
       render();
       renderVivo();
+      // El servidor responde con lo guardado y revisa el origen por detrás. Si lo guardado
+      // tiene más de 5 minutos, pedimos otra vez en unos segundos para mostrar la revisión nueva.
+      const viejo = Date.now() - new Date(datos.actualizado) > 5 * 60 * 1000;
+      if (viejo && !reintentado) {
+        reintentado = true;
+        setTimeout(() => cargar({ automatica: true }), 4000);
+      }
     })
     .catch(() => {
       if (datos.cupones.length) return;
