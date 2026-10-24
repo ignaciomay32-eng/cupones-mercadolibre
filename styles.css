@@ -117,11 +117,7 @@ svg { display: block; }
   background: var(--card);
   border-radius: 18px;
   padding: 18px;
-  animation: entrar 360ms var(--ease-out) both;
-  animation-delay: calc(min(var(--i, 0), 8) * 45ms);
 }
-@keyframes entrar { from { opacity: 0; transform: translateY(8px); } }
-.sin-animar .cupon { animation: none; }
 
 .cupon-cabeza { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: -6px; }
 .cupon-cat { display: block; font-size: .875rem; font-weight: 600; color: var(--muted); }
@@ -241,6 +237,118 @@ svg { display: block; }
 
 @media (min-width: 720px) {
   .lista { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- Perrito habanero ---------- */
+.perrito {
+  position: fixed; left: 0; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 15;
+  width: 92px; pointer-events: none;
+}
+.perrito-cuerpo {
+  display: block; width: 92px; height: 77px; padding: 0; border: 0; background: none; cursor: pointer;
+  pointer-events: auto; -webkit-tap-highlight-color: transparent;
+}
+.perrito-cuerpo:focus-visible { outline-offset: 0; }
+.perrito svg { width: 100%; height: 100%; overflow: visible; transition: transform 200ms var(--ease-out); }
+.perrito.a-la-izquierda svg { transform: scaleX(-1); }
+
+/* Colores: blanco cálido con sombras marfil, collar verde oliva y placa amarilla */
+.perrito .p-sombra { fill: rgba(35, 39, 26, .09); }
+/* Sin bordes por pieza: el contorno sale de la silueta completa (drop-shadow), así no se ven costuras. */
+.perrito .p-pata rect, .perrito .p-pelo, .perrito .p-torso, .perrito .p-cola circle, .perrito .p-craneo { fill: #fffdf7; }
+.perrito .p-hocico { fill: #fffdf7; stroke: #e4d9c2; stroke-width: 1.2; }
+.perrito svg { filter: drop-shadow(0 0 .7px #a99c7d) drop-shadow(0 0 .7px #a99c7d) drop-shadow(0 3px 4px rgba(35, 39, 26, .12)); }
+.perrito .p-oreja { fill: #f3ead9; stroke: #e2d6bd; stroke-width: 1.2; }
+.perrito .p-nariz, .perrito .p-ojo { fill: #23271a; }
+.perrito .p-brillo { fill: #fff; }
+.perrito .p-chapeta { fill: #f2b3aa; opacity: .55; }
+.perrito .p-collar { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; }
+.perrito .p-placa { fill: var(--ml); stroke: #c9b400; stroke-width: 1; }
+.perrito .p-boca-cerrada { fill: none; stroke: #23271a; stroke-width: 1.6; stroke-linecap: round; }
+.perrito .p-boca-abierta { display: none; }
+.perrito .p-boca-abierta ellipse:first-child { fill: #6e2f2f; }
+.perrito .p-lengua { fill: #e98b8b; }
+
+/* Movimiento: la cola se mueve siempre; las patas, al caminar; la cabeza, al ladrar */
+.perrito .p-cola { transform-origin: 32px 56px; animation: cola 900ms ease-in-out infinite alternate; }
+.perrito .p-pata { transform-box: fill-box; transform-origin: 50% 8%; }
+.perrito.caminando .p-pata-1, .perrito.caminando .p-pata-4 { animation: paso 320ms ease-in-out infinite alternate; }
+.perrito.caminando .p-pata-2, .perrito.caminando .p-pata-3 { animation: paso 320ms ease-in-out infinite alternate-reverse; }
+.perrito.caminando .p-cuerpo { animation: trote 320ms ease-in-out infinite alternate; }
+.perrito .p-cabeza { transform-origin: 86px 58px; }
+.perrito.ladrando .p-cabeza { animation: guau 380ms var(--ease-out) 2; }
+.perrito.ladrando .p-boca-abierta { display: inline; }
+.perrito.ladrando .p-boca-cerrada { display: none; }
+.perrito.ladrando .p-cola { animation-duration: 260ms; }
+@keyframes cola { from { transform: rotate(-8deg); } to { transform: rotate(10deg); } }
+@keyframes paso { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+@keyframes trote { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+@keyframes guau { 40% { transform: rotate(-9deg) translateY(-2px); } }
+
+/* Globo de texto */
+.perrito-globo {
+  position: absolute; bottom: calc(100% + 6px); left: 6px;
+  display: flex; align-items: flex-start; gap: 6px;
+  width: max-content; max-width: min(260px, calc(100vw - 32px));
+  padding: 10px 8px 10px 14px; border-radius: 16px;
+  background: var(--text); color: var(--card);
+  font-size: .92rem; font-weight: 600; line-height: 1.35;
+  pointer-events: auto;
+  transform-origin: 24px 100%;
+  animation: globo 260ms var(--ease-out);
+}
+.perrito-globo::after {
+  content: ""; position: absolute; top: 100%; left: 26px;
+  border: 7px solid transparent; border-top-color: var(--text);
+}
+.perrito.globo-derecha .perrito-globo { left: auto; right: 6px; transform-origin: calc(100% - 24px) 100%; }
+.perrito.globo-derecha .perrito-globo::after { left: auto; right: 26px; }
+.perrito-cerrar {
+  flex: none; width: 24px; height: 24px; margin-top: -2px; border: 0; border-radius: 50%;
+  background: rgba(255, 253, 247, .14); color: inherit; font-size: 1rem; line-height: 1; cursor: pointer;
+}
+@keyframes globo { from { opacity: 0; transform: scale(.85) translateY(6px); } }
+.mostrar-perrito { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
+
+/* ---------- Animaciones de los cupones ---------- */
+/* Aparecen al entrar en pantalla (solo si el script corre; sin él, se ven normales). */
+.js-anim .cupon:not(.esqueleto) { opacity: 0; transform: translateY(16px); transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out); transition-delay: var(--retraso, 0ms); }
+.js-anim .cupon.visible { opacity: 1; transform: none; }
+.sin-animar .cupon { transition: none; }
+
+/* Al copiar: el código sube en su lugar y el recorte se "sella" */
+.codigo.revela { animation: sello 420ms var(--ease-out); }
+.codigo.revela .codigo-txt { animation: subir 360ms var(--ease-out); }
+@keyframes sello { 30% { transform: scale(1.03); } }
+@keyframes subir { from { opacity: 0; transform: translateY(60%); } }
+
+/* Flecha del botón */
+.btn .flecha { width: 18px; height: 18px; margin-left: 8px; fill: currentColor; flex: none; transition: transform 200ms var(--ease-out); }
+
+/* Me gusta: un anillo sale del corazón */
+.like { position: relative; }
+.like.activo::after {
+  content: ""; position: absolute; left: 12px; top: 50%; width: 20px; height: 20px; margin-top: -10px;
+  border-radius: 50%; border: 2px solid var(--heart); opacity: 0; animation: anillo 480ms var(--ease-out);
+}
+@keyframes anillo { from { opacity: .8; transform: scale(.4); } to { opacity: 0; transform: scale(1.8); } }
+
+@media (hover: hover) and (pointer: fine) {
+  .js-anim .cupon.visible { transition: opacity 420ms var(--ease-out), transform 220ms var(--ease-out), background-color 200ms ease; }
+  .js-anim .cupon.visible:not(.es-apagado):hover { transform: translateY(-3px); }
+  .btn:hover .flecha { transform: translateX(4px); }
+}
+
+@media (max-width: 560px) {
+  .toast { bottom: 84px; }
+  .perrito, .perrito-cuerpo { width: 76px; }
+  .perrito-cuerpo { height: 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perrito .p-cola, .perrito.caminando .p-pata, .perrito.caminando .p-cuerpo, .perrito.ladrando .p-cabeza, .perrito-globo { animation: none; }
+  .js-anim .cupon:not(.esqueleto) { opacity: 1; transform: none; transition: none; }
+  .codigo.revela, .codigo.revela .codigo-txt, .like.activo::after { animation: none; }
 }
 
 /* Esqueleto de carga */
