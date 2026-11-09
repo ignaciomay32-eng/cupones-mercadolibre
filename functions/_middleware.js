@@ -1,8 +1,11 @@
 // Bloqueo por región: corre antes de cada página y archivo del sitio.
-// Cloudflare ubica al visitante por su IP y nos da el país y el estado en request.cf.
+// Cloudflare ubica al visitante por su IP y nos da el país, el estado y la ciudad en request.cf.
+// La ubicación por IP es aproximada: puede fallar con VPN, datos móviles o IPs mal ubicadas.
+// Cada entrada bloquea un estado (codigo/nombre) o, si trae "ciudad", solo esa ciudad.
 
 const BLOQUEADOS = [
   { pais: "MX", codigo: "OAX", nombre: "oaxaca" },
+  { pais: "MX", ciudad: "saltillo" },
 ];
 
 const PAGINA_BLOQUEO = `<!doctype html>
@@ -29,12 +32,15 @@ const PAGINA_BLOQUEO = `<!doctype html>
 </body>
 </html>`;
 
-function estaBloqueado(cf) {
+const limpio = (t) => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+export function estaBloqueado(cf) {
   if (!cf) return false;
   const pais = (cf.country || "").toUpperCase();
   const codigo = (cf.regionCode || "").toUpperCase();
-  const nombre = (cf.region || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  return BLOQUEADOS.some((b) => pais === b.pais && (codigo === b.codigo || nombre === b.nombre));
+  const nombre = limpio(cf.region);
+  const ciudad = limpio(cf.city);
+  return BLOQUEADOS.some((b) => pais === b.pais && (b.ciudad ? ciudad === b.ciudad : codigo === b.codigo || nombre === b.nombre));
 }
 
 // Estas rutas se ven desde cualquier lugar: quién opera el sitio, contacto y reglas
