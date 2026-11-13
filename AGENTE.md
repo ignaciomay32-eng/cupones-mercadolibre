@@ -15,10 +15,10 @@ El agente vive en `functions/api/cupones.js` y corre dentro de Cloudflare Pages 
 5. El sitio lo pide en `/api/cupones` y, si la página queda abierta, se refresca solo cada 5 minutos.
 
 ## Configuración
-Arriba de `functions/api/cupones.js`:
-- `AFILIADO`: link de afiliado de Mercado Libre.
+Arriba de `functions/_lib/comun.js`:
+- `AFILIADO`: enlace del botón de **todos** los cupones (del día, bancarios, flash y activables). Hoy: `https://meli.la/1tucCjM`.
 - `ORIGEN`: página de donde salen los cupones.
-- `CACHE_SEGUNDOS`: cada cuánto se vuelve a leer el origen.
+- `SINCRONIZAR_CADA_MS`: cada cuánto se vuelve a leer el origen (5 minutos).
 
 ## Si deja de mostrar cupones
 `https://cupones-mercadolibre.com/api/cupones` muestra el error. Lo más probable es que la página de origen haya cambiado su diseño, y entonces hay que ajustar `extraerCupones`.
