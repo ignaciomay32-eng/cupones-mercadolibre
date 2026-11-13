@@ -1,7 +1,8 @@
 // Código compartido por las rutas de /api: lectura del origen, base de datos y utilidades.
 
 export const ORIGEN = "https://www.cuponesmercadolibre.mx/";
-export const AFILIADO = "https://www.mercadolibre.com.mx/social/maya5629565";
+// Enlace del botón de TODOS los cupones (del día, bancarios, flash y activables).
+export const AFILIADO = "https://meli.la/1tucCjM";
 const SINCRONIZAR_CADA_MS = 5 * 60 * 1000; // 5 minutos
 
 const TIPOS = {
