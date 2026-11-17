@@ -3,8 +3,8 @@
 export const ORIGEN = "https://www.cuponesmercadolibre.mx/";
 // Enlace del botón de TODOS los cupones (del día, bancarios, flash y activables).
 export const AFILIADO = "https://meli.la/1tucCjM";
-// Cupones de Amazon (vienen de cupondeldia.com): esta página no tiene enlace de Amazon, así que van a la tienda sin afiliado.
-export const AMAZON = "https://www.amazon.com.mx/";
+// Enlace del botón de TODOS los cupones de Amazon (vienen de cupondeldia.com).
+export const AMAZON = "https://link.amazon/B04UV6nj2";
 // Segunda fuente: cupones vigentes de Mercado Libre y Amazon publicados en cupondeldia.com (sin enlaces; aquí se pone el propio).
 export const CUPONDELDIA = "https://cupondeldia.com/api/cupones/compartir";
 // Códigos que NO se muestran nunca en esta página (ni en AhorraMX, que toma los cupones de aquí).
