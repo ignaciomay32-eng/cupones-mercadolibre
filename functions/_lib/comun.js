@@ -7,6 +7,11 @@ export const AFILIADO = "https://meli.la/1tucCjM";
 export const AMAZON = "https://www.amazon.com.mx/";
 // Segunda fuente: cupones vigentes de Mercado Libre y Amazon publicados en cupondeldia.com (sin enlaces; aquí se pone el propio).
 export const CUPONDELDIA = "https://cupondeldia.com/api/cupones/compartir";
+// Códigos que NO se muestran nunca en esta página (ni en AhorraMX, que toma los cupones de aquí).
+// Para ocultar otro, agrégalo a la lista (mayúsculas o minúsculas da igual).
+export const OCULTAR_CODIGOS = ["DIRECT-2AA80C7A"];
+const ocultos = new Set(OCULTAR_CODIGOS.map((c) => c.trim().toUpperCase()));
+export const oculto = (c) => ocultos.has((c.codigo || "").trim().toUpperCase());
 export const enlacePara = (tienda) => (tienda === "amazon" ? AMAZON : AFILIADO);
 const SINCRONIZAR_CADA_MS = 5 * 60 * 1000; // 5 minutos
 
@@ -167,7 +172,7 @@ export function juntar(origen, cdd) {
     vistos.add(llave);
     extra.push(c);
   }
-  return [...origen.map((c) => ({ ...c, tienda: "mercadolibre" })), ...extra];
+  return [...origen.map((c) => ({ ...c, tienda: "mercadolibre" })), ...extra].filter((c) => !oculto(c));
 }
 
 // ---------- Base de datos (Cloudflare D1) ----------
