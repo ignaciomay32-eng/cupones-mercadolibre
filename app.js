@@ -367,7 +367,7 @@ document.addEventListener("click", async (e) => {
     // Copiar y abrir sin esperar nada: Safari bloquea la pestaña nueva si se abre después de un await.
     const copiado = copiar(ver.dataset.codigo);
     window.open(ver.dataset.link, "_blank", "noopener");
-    const sitio = /amazon\./.test(ver.dataset.link) ? "amazon.com.mx" : "mercadolibre.com.mx";
+    const sitio = /amazon/.test(ver.dataset.link) ? "amazon.com.mx" : "mercadolibre.com.mx";
     avisar(copiado
       ? `Código ${ver.dataset.codigo} copiado · abriendo ${sitio}`
       : `Copia el código ${ver.dataset.codigo} · abriendo ${sitio}`);
