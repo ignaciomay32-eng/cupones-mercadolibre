@@ -186,7 +186,9 @@ function tarjeta(c, i, enHistorial = false) {
   const cat = c.banco ? `${c.categoria} · ${c.banco}` : c.categoria;
   const cond = condiciones(c, monto);
 
-  return `<article class="cupon ${usable ? "" : "es-apagado"} ${enHistorial ? "es-historial" : ""}" style="--i:${i}">
+  const proximo = c.estado === "proximamente" && !enHistorial;
+  return `<article class="cupon ${proximo ? "es-proximo" : usable ? "" : "es-apagado"} ${enHistorial ? "es-historial" : ""}" style="--i:${i}">
+    ${proximo ? `<p class="aviso-proximo">⏰ Se activa pronto${c.inicia ? ` · ${horaMx(c.inicia)}` : ""}</p>` : ""}
     <div class="cupon-cabeza">
       <span class="cupon-cat">${escapar(cat || "")}</span>
       <span class="tienda">Válido en ${tienda}</span>
@@ -263,8 +265,11 @@ function entradas(animar) {
 
 
 function render() {
-  const lista = datos.cupones.map(segunHorario).filter((c) => c.estado !== "vencido" && (categoria === "Todos" || c.categoria === categoria));
-  const vigentes = lista.filter((c) => c.estado !== "agotado");
+  const todos = datos.cupones.map(segunHorario).filter((c) => c.estado !== "vencido");
+  // programados: arriba de todo y en cualquier categoría, ordenados por la hora en que se activan
+  const proximos = todos.filter((c) => c.estado === "proximamente").sort((a, b) => (a.inicia || "9").localeCompare(b.inicia || "9"));
+  const lista = todos.filter((c) => c.estado !== "proximamente" && (categoria === "Todos" || c.categoria === categoria));
+  const vigentes = [...proximos, ...lista.filter((c) => c.estado !== "agotado")];
   const agotados = lista.filter((c) => c.estado === "agotado");
   const historial = datos.historial || [];
 
