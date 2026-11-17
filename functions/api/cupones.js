@@ -1,7 +1,7 @@
 // Agente de cupones. Lee el origen como mucho cada 5 minutos, guarda todo en la base
 // (para tener historial) y devuelve los cupones vigentes, el historial y los contadores.
 
-import { enlacePara, hoyMX, oculto, json, juntar, leerCupondeldia, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
+import { conHorario, enlacePara, hoyMX, oculto, json, juntar, leerCupondeldia, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
 
 const VIGENTES = new Set(["activo", "pocas", "agotado", "proximamente"]);
 
@@ -44,10 +44,10 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const historial = [];
   for (const f of filas) {
     if (oculto(f)) continue;
-    const c = { ...f, tienda: f.tienda || "mercadolibre", link: enlacePara(f.tienda), me_gusta: mios.has(f.id) };
-    const vigente = f.en_origen === 1 && VIGENTES.has(f.estado) && (!f.vence || f.vence >= hoy);
+    const c = conHorario({ ...f, tienda: f.tienda || "mercadolibre", link: enlacePara(f.tienda), me_gusta: mios.has(f.id) });
+    const vigente = f.en_origen === 1 && VIGENTES.has(c.estado) && (!f.vence || f.vence >= hoy);
     if (vigente) cupones.push(c);
-    else historial.push({ ...c, estado: f.estado === "vencido" || (f.vence && f.vence < hoy) ? "vencido" : "finalizado" });
+    else historial.push({ ...c, estado: c.estado === "vencido" || (f.vence && f.vence < hoy) ? "vencido" : "finalizado" });
   }
 
   return json({
