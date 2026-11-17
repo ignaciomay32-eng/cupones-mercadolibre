@@ -18,6 +18,7 @@ El agente vive en `functions/api/cupones.js` y corre dentro de Cloudflare Pages 
 Arriba de `functions/_lib/comun.js`:
 - `AFILIADO`: enlace del botón de **todos** los cupones (del día, bancarios, flash y activables). Hoy: `https://meli.la/1tucCjM`.
 - `ORIGEN`: página de donde salen los cupones.
+- `OCULTAR_CODIGOS`: códigos que nunca se muestran aquí ni en AhorraMX (hoy: `DIRECT-2AA80C7A`).
 - `SINCRONIZAR_CADA_MS`: cada cuánto se vuelve a leer el origen (5 minutos).
 
 ## Si deja de mostrar cupones
