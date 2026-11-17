@@ -1,7 +1,7 @@
 // Agente de cupones. Lee el origen como mucho cada 5 minutos, guarda todo en la base
 // (para tener historial) y devuelve los cupones vigentes, el historial y los contadores.
 
-import { AFILIADO, hoyMX, json, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
+import { enlacePara, hoyMX, json, juntar, leerCupondeldia, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
 
 const VIGENTES = new Set(["activo", "pocas", "agotado", "proximamente"]);
 
@@ -9,7 +9,9 @@ export async function onRequestGet({ request, env, waitUntil }) {
   // Sin base de datos conectada: funciona como antes, sin likes, opiniones ni historial.
   if (!env.DB) {
     try {
-      const cupones = (await leerOrigen()).filter((c) => VIGENTES.has(c.estado)).map((c) => ({ ...c, link: AFILIADO }));
+      const [principal, cdd] = await Promise.allSettled([leerOrigen(), leerCupondeldia()]);
+      if (principal.status !== "fulfilled" && cdd.status !== "fulfilled") throw principal.reason;
+      const cupones = juntar(principal.value || [], cdd.value || []).filter((c) => VIGENTES.has(c.estado)).map((c) => ({ ...c, link: enlacePara(c.tienda) }));
       return json({ actualizado: new Date().toISOString(), funciones: false, cupones, historial: [] });
     } catch (e) {
       return json({ error: String(e.message || e), cupones: [], historial: [] }, 502);
@@ -41,7 +43,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const cupones = [];
   const historial = [];
   for (const f of filas) {
-    const c = { ...f, link: AFILIADO, me_gusta: mios.has(f.id) };
+    const c = { ...f, tienda: f.tienda || "mercadolibre", link: enlacePara(f.tienda), me_gusta: mios.has(f.id) };
     const vigente = f.en_origen === 1 && VIGENTES.has(f.estado) && (!f.vence || f.vence >= hoy);
     if (vigente) cupones.push(c);
     else historial.push({ ...c, estado: f.estado === "vencido" || (f.vence && f.vence < hoy) ? "vencido" : "finalizado" });

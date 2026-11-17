@@ -126,8 +126,11 @@ function corazon(c) {
     </button>`;
 }
 
+const NOMBRE_TIENDA = { mercadolibre: "Mercado Libre", amazon: "Amazon" };
+
 function tarjeta(c, i, enHistorial = false) {
   const link = escapar(c.link);
+  const tienda = NOMBRE_TIENDA[c.tienda] || "Mercado Libre";
   const usable = c.estado === "activo" || c.estado === "pocas";
   const [monto, sufijo] = partirMonto(c.descuento);
   const visto = revelados.has(c.id);
@@ -140,9 +143,9 @@ function tarjeta(c, i, enHistorial = false) {
 
   let boton = "";
   if (usable && c.codigo) {
-    boton = `<button class="btn full" data-ver="${escapar(c.id)}" data-codigo="${escapar(c.codigo)}" data-link="${link}">Copiar e ir a Mercado Libre${ICONO.flecha}</button>`;
+    boton = `<button class="btn full" data-ver="${escapar(c.id)}" data-codigo="${escapar(c.codigo)}" data-link="${link}">Copiar e ir a ${tienda}${ICONO.flecha}</button>`;
   } else if (usable) {
-    boton = `<a class="btn full" href="${link}" target="_blank" rel="nofollow sponsored noopener">${escapar(c.boton || "Activar en Mercado Libre")}</a>`;
+    boton = `<a class="btn full" href="${link}" target="_blank" rel="nofollow sponsored noopener">${escapar(c.boton || `Activar en ${tienda}`)}</a>`;
   }
 
   let linea = "";
@@ -165,7 +168,7 @@ function tarjeta(c, i, enHistorial = false) {
   return `<article class="cupon ${usable ? "" : "es-apagado"} ${enHistorial ? "es-historial" : ""}" style="--i:${i}">
     <div class="cupon-cabeza">
       <span class="cupon-cat">${escapar(cat || "")}</span>
-      <span class="tienda">Válido en Mercado Libre</span>
+      <span class="tienda">Válido en ${tienda}</span>
     </div>
     <p class="cupon-monto"><span class="monto">${escapar(monto)}</span>${sufijo ? ` <span class="monto-sufijo">de descuento</span>` : ""}</p>
     ${cond ? `<p class="cupon-cond">${cond}</p>` : ""}
@@ -364,9 +367,10 @@ document.addEventListener("click", async (e) => {
     // Copiar y abrir sin esperar nada: Safari bloquea la pestaña nueva si se abre después de un await.
     const copiado = copiar(ver.dataset.codigo);
     window.open(ver.dataset.link, "_blank", "noopener");
+    const sitio = /amazon\./.test(ver.dataset.link) ? "amazon.com.mx" : "mercadolibre.com.mx";
     avisar(copiado
-      ? `Código ${ver.dataset.codigo} copiado · abriendo mercadolibre.com.mx`
-      : `Copia el código ${ver.dataset.codigo} · abriendo mercadolibre.com.mx`);
+      ? `Código ${ver.dataset.codigo} copiado · abriendo ${sitio}`
+      : `Copia el código ${ver.dataset.codigo} · abriendo ${sitio}`);
     if (primera && datos.funciones) {
       enviar("/api/usar", { id }).then((r) => {
         const c = buscarCupon(id);
