@@ -128,7 +128,25 @@ function corazon(c) {
 
 const NOMBRE_TIENDA = { mercadolibre: "Mercado Libre", amazon: "Amazon" };
 
+// Horario (cupondeldia.com): "hoy, 9:00 a.m." en hora de México.
+function horaMx(iso) {
+  const t = new Date(iso);
+  const dia = (d) => d.toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
+  const hoyS = dia(new Date()), mananaS = dia(new Date(Date.now() + 86400000));
+  const hora = t.toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit", timeZone: "America/Mexico_City" });
+  const d = dia(t) === hoyS ? "hoy" : dia(t) === mananaS ? "mañana" : t.toLocaleDateString("es-MX", { day: "numeric", month: "short", timeZone: "America/Mexico_City" });
+  return `${d}, ${hora}`;
+}
+function segunHorario(c) {
+  const ahora = Date.now();
+  if (c.termina && Date.parse(c.termina) <= ahora) return { ...c, estado: "vencido" };
+  if (c.inicia && Date.parse(c.inicia) > ahora && c.estado !== "agotado") return { ...c, estado: "proximamente" };
+  if (c.inicia && Date.parse(c.inicia) <= ahora && c.estado === "proximamente") return { ...c, estado: "activo" };
+  return c;
+}
+
 function tarjeta(c, i, enHistorial = false) {
+  c = segunHorario(c);
   const link = escapar(c.link);
   const tienda = NOMBRE_TIENDA[c.tienda] || "Mercado Libre";
   const usable = c.estado === "activo" || c.estado === "pocas";
@@ -136,7 +154,7 @@ function tarjeta(c, i, enHistorial = false) {
   const visto = revelados.has(c.id);
 
   let codigo = "";
-  if (c.codigo) {
+  if (c.codigo && c.estado !== "proximamente") {
     const mostrar = visto && usable ? c.codigo : ocultar(c.codigo);
     codigo = `<div class="codigo ${visto && usable ? "visto" : ""}"><span class="codigo-etq">Código</span><span class="codigo-txt">${escapar(mostrar)}</span></div>`;
   }
@@ -160,6 +178,9 @@ function tarjeta(c, i, enHistorial = false) {
     ].filter(Boolean).join(" · ");
   }
 
+  const horario = !enHistorial && (c.inicia || c.termina)
+    ? [c.inicia && c.estado === "proximamente" ? `Se activa ${horaMx(c.inicia)}` : "", c.termina ? `Se desactiva ${horaMx(c.termina)}` : ""].filter(Boolean).join(" · ")
+    : "";
   const estado = c.estado !== "activo" && ETIQUETA_ESTADO[c.estado]
     ? `<span class="estado estado-${c.estado}">${ETIQUETA_ESTADO[c.estado]}</span>` : "";
   const cat = c.banco ? `${c.categoria} · ${c.banco}` : c.categoria;
@@ -173,6 +194,7 @@ function tarjeta(c, i, enHistorial = false) {
     <p class="cupon-monto"><span class="monto">${escapar(monto)}</span>${sufijo ? ` <span class="monto-sufijo">de descuento</span>` : ""}</p>
     ${cond ? `<p class="cupon-cond">${cond}</p>` : ""}
     ${c.nota ? `<p class="nota">${escapar(c.nota)}</p>` : ""}
+    ${horario ? `<p class="nota horario">🕘 ${horario}</p>` : ""}
     ${codigo}
     ${boton}
     <div class="cupon-pie">
@@ -241,7 +263,7 @@ function entradas(animar) {
 
 
 function render() {
-  const lista = datos.cupones.filter((c) => categoria === "Todos" || c.categoria === categoria);
+  const lista = datos.cupones.map(segunHorario).filter((c) => c.estado !== "vencido" && (categoria === "Todos" || c.categoria === categoria));
   const vigentes = lista.filter((c) => c.estado !== "agotado");
   const agotados = lista.filter((c) => c.estado === "agotado");
   const historial = datos.historial || [];

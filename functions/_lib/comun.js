@@ -146,8 +146,21 @@ export function normalizarCdd(c) {
     publicado: hoyMX(),
     destacado: 0,
     prioridad: 0,
-    estado: "activo",
+    // horario puesto en cupondeldia.com (ISO UTC): "proximamente" antes de la hora; "vencido" si ya terminó
+    estado: c.estado === "proximamente" ? "proximamente" : c.estado === "vencido" ? "vencido" : "activo",
+    inicia: fechaISO(c.inicia),
+    termina: fechaISO(c.termina),
   };
+}
+
+const fechaISO = (v) => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? new Date(Date.parse(v)).toISOString() : null);
+
+// Estado según el horario (si lo tiene): antes de iniciar, "proximamente"; después de terminar, "vencido".
+export function conHorario(c, ahora = Date.now()) {
+  if (c.termina && Date.parse(c.termina) <= ahora) return { ...c, estado: "vencido" };
+  if (c.inicia && Date.parse(c.inicia) > ahora && c.estado !== "agotado") return { ...c, estado: "proximamente" };
+  if (c.inicia && Date.parse(c.inicia) <= ahora && c.estado === "proximamente") return { ...c, estado: "activo" };
+  return c;
 }
 
 export async function leerCupondeldia() {
@@ -163,16 +176,24 @@ export async function leerCupondeldia() {
 
 // Junta las dos fuentes. Cada código sale una sola vez por tienda: si un código de Mercado Libre ya viene del origen
 // principal, no se repite, y si cupondeldia lo trae dos veces, se queda el verificado (los "sin confirmar" llevan nota).
-export function juntar(origen, cdd) {
-  const vistos = new Set(origen.map((c) => `mercadolibre|${(c.codigo || "").toUpperCase()}`));
+export function juntar(origen, cdd, ahora = Date.now()) {
+  // Horario puesto en cupondeldia.com: manda también sobre el mismo código que llega del origen principal.
+  const horarios = new Map();
+  for (const c of cdd) if (c.tienda === "mercadolibre" && (c.inicia || c.termina || c.estado === "vencido")) horarios.set(c.codigo.toUpperCase(), c);
+  const base = origen.map((c) => {
+    const h = horarios.get((c.codigo || "").toUpperCase());
+    const o = { ...c, tienda: "mercadolibre", inicia: c.inicia ?? null, termina: c.termina ?? null };
+    return h ? conHorario({ ...o, inicia: h.inicia, termina: h.termina, estado: h.estado === "vencido" ? "vencido" : o.estado }, ahora) : o;
+  });
+  const vistos = new Set(base.map((c) => `mercadolibre|${(c.codigo || "").toUpperCase()}`));
   const extra = [];
   for (const c of [...cdd].sort((a, b) => Number(!!a.nota) - Number(!!b.nota))) {
     const llave = `${c.tienda}|${c.codigo.toUpperCase()}`;
-    if (vistos.has(llave)) continue;
+    if (vistos.has(llave) || c.estado === "vencido") continue;
     vistos.add(llave);
-    extra.push(c);
+    extra.push(conHorario(c, ahora));
   }
-  return [...origen.map((c) => ({ ...c, tienda: "mercadolibre" })), ...extra].filter((c) => !oculto(c));
+  return [...base, ...extra].filter((c) => !oculto(c));
 }
 
 // ---------- Base de datos (Cloudflare D1) ----------
@@ -199,6 +220,9 @@ export async function prepararDB(db) {
   ]);
   // columna nueva (cupones de Amazon que llegan de cupondeldia.com); si ya existe, no pasa nada
   await db.prepare("ALTER TABLE cupones ADD COLUMN tienda TEXT NOT NULL DEFAULT 'mercadolibre'").run().catch(() => null);
+  // horario puesto en cupondeldia.com (ISO UTC)
+  await db.prepare("ALTER TABLE cupones ADD COLUMN inicia TEXT").run().catch(() => null);
+  await db.prepare("ALTER TABLE cupones ADD COLUMN termina TEXT").run().catch(() => null);
   tablasListas = true;
 }
 
@@ -220,18 +244,19 @@ export async function sincronizar(db) {
   const cupones = juntar(okPrincipal ? principal.value : [], okCdd ? cdd.value : []);
 
   const guardar = db.prepare(`INSERT INTO cupones (id, codigo, descuento, porcentaje, compra_minima, tope, descripcion, nota,
-      categoria, banco, boton, vence, publicado, destacado, prioridad, estado, visto_primero, visto_ultimo, en_origen, tienda)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17, 1, ?18)
+      categoria, banco, boton, vence, publicado, destacado, prioridad, estado, visto_primero, visto_ultimo, en_origen, tienda, inicia, termina)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17, 1, ?18, ?19, ?20)
     ON CONFLICT(id) DO UPDATE SET codigo = ?2, descuento = ?3, porcentaje = ?4, compra_minima = ?5, tope = ?6,
       descripcion = ?7, nota = ?8, categoria = ?9, banco = ?10, boton = ?11, vence = ?12,
-      publicado = CASE WHEN id LIKE 'cdd-%' THEN publicado ELSE ?13 END, destacado = ?14, prioridad = ?15, estado = ?16, visto_ultimo = ?17, en_origen = 1, tienda = ?18`);
+      publicado = CASE WHEN id LIKE 'cdd-%' THEN publicado ELSE ?13 END, destacado = ?14, prioridad = ?15, estado = ?16, visto_ultimo = ?17, en_origen = 1, tienda = ?18, inicia = ?19, termina = ?20`);
 
   // Lo que ya no aparece en su fuente deja de mostrarse (solo si esa fuente respondió bien).
   const salieron = (esCdd, ids) => db.prepare(`UPDATE cupones SET en_origen = 0 WHERE en_origen = 1 AND id ${esCdd ? "LIKE" : "NOT LIKE"} 'cdd-%'`
     + (ids.length ? ` AND id NOT IN (${ids.map(() => "?").join(",")})` : "")).bind(...ids);
   await db.batch([
     ...cupones.map((c) => guardar.bind(c.id, c.codigo, c.descuento, c.porcentaje, c.compra_minima, c.tope,
-      c.descripcion, c.nota, c.categoria, c.banco, c.boton, c.vence, c.publicado, c.destacado, c.prioridad, c.estado, ahora, c.tienda)),
+      c.descripcion, c.nota, c.categoria, c.banco, c.boton, c.vence, c.publicado, c.destacado, c.prioridad, c.estado, ahora, c.tienda,
+      c.inicia ?? null, c.termina ?? null)),
     ...(okPrincipal ? [salieron(false, cupones.filter((c) => !c.id.startsWith("cdd-")).map((c) => c.id))] : []),
     ...(okCdd ? [salieron(true, cupones.filter((c) => c.id.startsWith("cdd-")).map((c) => c.id))] : []),
   ]);
