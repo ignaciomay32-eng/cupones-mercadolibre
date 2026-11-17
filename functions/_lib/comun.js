@@ -156,11 +156,18 @@ export async function leerCupondeldia() {
   return d.cupones.map(normalizarCdd).filter(Boolean);
 }
 
-// Junta las dos fuentes. Si un código de Mercado Libre ya viene del origen principal, no se repite.
+// Junta las dos fuentes. Cada código sale una sola vez por tienda: si un código de Mercado Libre ya viene del origen
+// principal, no se repite, y si cupondeldia lo trae dos veces, se queda el verificado (los "sin confirmar" llevan nota).
 export function juntar(origen, cdd) {
-  const codigos = new Set(origen.map((c) => (c.codigo || "").toUpperCase()));
-  return [...origen.map((c) => ({ ...c, tienda: "mercadolibre" })),
-    ...cdd.filter((c) => c.tienda !== "mercadolibre" || !codigos.has(c.codigo.toUpperCase()))];
+  const vistos = new Set(origen.map((c) => `mercadolibre|${(c.codigo || "").toUpperCase()}`));
+  const extra = [];
+  for (const c of [...cdd].sort((a, b) => Number(!!a.nota) - Number(!!b.nota))) {
+    const llave = `${c.tienda}|${c.codigo.toUpperCase()}`;
+    if (vistos.has(llave)) continue;
+    vistos.add(llave);
+    extra.push(c);
+  }
+  return [...origen.map((c) => ({ ...c, tienda: "mercadolibre" })), ...extra];
 }
 
 // ---------- Base de datos (Cloudflare D1) ----------
