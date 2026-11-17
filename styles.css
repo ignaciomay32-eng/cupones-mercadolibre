@@ -184,6 +184,14 @@ svg { display: block; }
 .like.activo svg { animation: latido 300ms var(--ease-out); }
 @keyframes latido { 40% { transform: scale(1.25); } }
 
+/* Programado (se activa a una hora): morado, para distinguirlo de los activos */
+.cupon.es-proximo { background: #F7F3FF; box-shadow: 0 0 0 2px rgba(124, 58, 237, .35); }
+.es-proximo .cupon-monto { color: #6D28D9; }
+.es-proximo .tienda { background: #EDE5FF; color: #5B21B6; }
+.es-proximo .horario { color: #5B21B6; font-weight: 600; }
+.aviso-proximo { margin: 0; align-self: flex-start; padding: 5px 12px; border-radius: 999px; background: #6D28D9; color: #fff;
+  font-size: .85rem; font-weight: 700; }
+
 /* Agotados e historial: la misma tarjeta, más apagada */
 .es-apagado .cupon-monto { color: var(--muted); }
 .es-apagado .monto { text-decoration: line-through; text-decoration-thickness: 2px; }
