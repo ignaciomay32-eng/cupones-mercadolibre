@@ -3,6 +3,11 @@
 export const ORIGEN = "https://www.cuponesmercadolibre.mx/";
 // Enlace del botón de TODOS los cupones (del día, bancarios, flash y activables).
 export const AFILIADO = "https://meli.la/1tucCjM";
+// Cupones de Amazon (vienen de cupondeldia.com): esta página no tiene enlace de Amazon, así que van a la tienda sin afiliado.
+export const AMAZON = "https://www.amazon.com.mx/";
+// Segunda fuente: cupones vigentes de Mercado Libre y Amazon publicados en cupondeldia.com (sin enlaces; aquí se pone el propio).
+export const CUPONDELDIA = "https://cupondeldia.com/api/cupones/compartir";
+export const enlacePara = (tienda) => (tienda === "amazon" ? AMAZON : AFILIADO);
 const SINCRONIZAR_CADA_MS = 5 * 60 * 1000; // 5 minutos
 
 const TIPOS = {
@@ -111,6 +116,53 @@ export async function leerOrigen() {
   return cupones;
 }
 
+// ---------- Segunda fuente: cupondeldia.com ----------
+
+const TIPOS_CDD = { bancario: "Bancos", flash: "Flash", meliplus: "Meli+", tienda: "Cupones" };
+
+export function normalizarCdd(c) {
+  const tienda = c.tienda === "amazon" ? "amazon" : "mercadolibre";
+  const codigo = limpiar(c.codigo);
+  if (!codigo || typeof c.id !== "string" || !c.id.startsWith("cdd-") || c.id.length > 64) return null;
+  return {
+    id: c.id,
+    tienda,
+    codigo,
+    descuento: limpiar(c.descuento),
+    porcentaje: /%/.test(c.descuento || "") ? limpiar(c.descuento) : null,
+    compra_minima: limpiar(c.compra_minima),
+    tope: limpiar(c.tope),
+    descripcion: limpiar(c.condiciones) || "En productos seleccionados",
+    nota: c.estado === "sin_confirmar" ? "Sin confirmar: revisa que aplique antes de pagar." : null,
+    categoria: tienda === "amazon" ? "Amazon" : TIPOS_CDD[c.tipo] || "Cupones",
+    banco: null,
+    boton: null,
+    vence: typeof c.vence === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.vence) ? c.vence : null,
+    publicado: hoyMX(),
+    destacado: 0,
+    prioridad: 0,
+    estado: "activo",
+  };
+}
+
+export async function leerCupondeldia() {
+  const r = await fetch(CUPONDELDIA, {
+    headers: { Accept: "application/json", "User-Agent": "cupones-mercadolibre.com/1.0 (+https://cupones-mercadolibre.com)" },
+    cf: { cacheTtl: 300, cacheEverything: true },
+  });
+  if (!r.ok) throw new Error(`cupondeldia respondió ${r.status}`);
+  const d = await r.json();
+  if (!Array.isArray(d.cupones)) throw new Error("cupondeldia no trajo la lista");
+  return d.cupones.map(normalizarCdd).filter(Boolean);
+}
+
+// Junta las dos fuentes. Si un código de Mercado Libre ya viene del origen principal, no se repite.
+export function juntar(origen, cdd) {
+  const codigos = new Set(origen.map((c) => (c.codigo || "").toUpperCase()));
+  return [...origen.map((c) => ({ ...c, tienda: "mercadolibre" })),
+    ...cdd.filter((c) => c.tienda !== "mercadolibre" || !codigos.has(c.codigo.toUpperCase()))];
+}
+
 // ---------- Base de datos (Cloudflare D1) ----------
 
 let tablasListas = false;
@@ -133,6 +185,8 @@ export async function prepararDB(db) {
     db.prepare(`CREATE INDEX IF NOT EXISTS opiniones_cupon ON opiniones (cupon_id, id)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS meta (clave TEXT PRIMARY KEY, valor TEXT)`),
   ]);
+  // columna nueva (cupones de Amazon que llegan de cupondeldia.com); si ya existe, no pasa nada
+  await db.prepare("ALTER TABLE cupones ADD COLUMN tienda TEXT NOT NULL DEFAULT 'mercadolibre'").run().catch(() => null);
   tablasListas = true;
 }
 
@@ -146,25 +200,28 @@ export async function sincronizar(db) {
   await db.prepare("INSERT INTO meta (clave, valor) VALUES ('ultima_sync', ?1) ON CONFLICT(clave) DO UPDATE SET valor = ?1")
     .bind(ahora).run();
 
-  let cupones;
-  try {
-    cupones = await leerOrigen();
-  } catch {
-    return fila?.valor || null; // si el origen falla, se sigue mostrando lo guardado
-  }
+  // Las dos fuentes por separado: si una falla, la otra se sigue actualizando y lo guardado se sigue mostrando.
+  const [principal, cdd] = await Promise.allSettled([leerOrigen(), leerCupondeldia()]);
+  const okPrincipal = principal.status === "fulfilled";
+  const okCdd = cdd.status === "fulfilled";
+  if (!okPrincipal && !okCdd) return fila?.valor || null;
+  const cupones = juntar(okPrincipal ? principal.value : [], okCdd ? cdd.value : []);
 
   const guardar = db.prepare(`INSERT INTO cupones (id, codigo, descuento, porcentaje, compra_minima, tope, descripcion, nota,
-      categoria, banco, boton, vence, publicado, destacado, prioridad, estado, visto_primero, visto_ultimo, en_origen)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17, 1)
+      categoria, banco, boton, vence, publicado, destacado, prioridad, estado, visto_primero, visto_ultimo, en_origen, tienda)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17, 1, ?18)
     ON CONFLICT(id) DO UPDATE SET codigo = ?2, descuento = ?3, porcentaje = ?4, compra_minima = ?5, tope = ?6,
-      descripcion = ?7, nota = ?8, categoria = ?9, banco = ?10, boton = ?11, vence = ?12, publicado = ?13,
-      destacado = ?14, prioridad = ?15, estado = ?16, visto_ultimo = ?17, en_origen = 1`);
+      descripcion = ?7, nota = ?8, categoria = ?9, banco = ?10, boton = ?11, vence = ?12,
+      publicado = CASE WHEN id LIKE 'cdd-%' THEN publicado ELSE ?13 END, destacado = ?14, prioridad = ?15, estado = ?16, visto_ultimo = ?17, en_origen = 1, tienda = ?18`);
 
-  const ids = cupones.map((c) => c.id);
+  // Lo que ya no aparece en su fuente deja de mostrarse (solo si esa fuente respondió bien).
+  const salieron = (esCdd, ids) => db.prepare(`UPDATE cupones SET en_origen = 0 WHERE en_origen = 1 AND id ${esCdd ? "LIKE" : "NOT LIKE"} 'cdd-%'`
+    + (ids.length ? ` AND id NOT IN (${ids.map(() => "?").join(",")})` : "")).bind(...ids);
   await db.batch([
     ...cupones.map((c) => guardar.bind(c.id, c.codigo, c.descuento, c.porcentaje, c.compra_minima, c.tope,
-      c.descripcion, c.nota, c.categoria, c.banco, c.boton, c.vence, c.publicado, c.destacado, c.prioridad, c.estado, ahora)),
-    db.prepare(`UPDATE cupones SET en_origen = 0 WHERE en_origen = 1 AND id NOT IN (${ids.map(() => "?").join(",")})`).bind(...ids),
+      c.descripcion, c.nota, c.categoria, c.banco, c.boton, c.vence, c.publicado, c.destacado, c.prioridad, c.estado, ahora, c.tienda)),
+    ...(okPrincipal ? [salieron(false, cupones.filter((c) => !c.id.startsWith("cdd-")).map((c) => c.id))] : []),
+    ...(okCdd ? [salieron(true, cupones.filter((c) => c.id.startsWith("cdd-")).map((c) => c.id))] : []),
   ]);
   return ahora;
 }
