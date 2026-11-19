@@ -13,7 +13,14 @@ export const OCULTAR_CODIGOS = ["DIRECT-2AA80C7A"];
 const ocultos = new Set(OCULTAR_CODIGOS.map((c) => c.trim().toUpperCase()));
 export const oculto = (c) => ocultos.has((c.codigo || "").trim().toUpperCase());
 export const enlacePara = (tienda) => (tienda === "amazon" ? AMAZON : AFILIADO);
-const SINCRONIZAR_CADA_MS = 5 * 60 * 1000; // 5 minutos
+export const SINCRONIZAR_CADA_MS = 5 * 60 * 1000; // datos buenos: se vuelven a revisar a los 5 minutos
+const REINTENTAR_CADA_MS = 60 * 1000; // si una fuente falló, se reintenta al minuto
+
+// conCache: guarda la respuesta 5 minutos en Cloudflare. Solo se usa sin base de datos, donde cada visita
+// leería las fuentes. Con base de datos la sincronización ya limita las lecturas, y una segunda copia
+// guardada solo haría que los datos llegaran más viejos.
+// (Sin "cache: no-store" a propósito: falla en proyectos de Cloudflare con fecha de compatibilidad vieja.)
+const cachePara = (conCache) => (conCache ? { cf: { cacheTtl: 300, cacheEverything: true } } : {});
 
 const TIPOS = {
   dia: "Cupón del día",
@@ -109,10 +116,10 @@ function normalizar(c, hoy) {
   };
 }
 
-export async function leerOrigen() {
+export async function leerOrigen({ conCache = false } = {}) {
   const r = await fetch(ORIGEN, {
     headers: { "User-Agent": "Mozilla/5.0 (compatible; cupones-mercadolibre.com)" },
-    cf: { cacheTtl: 300, cacheEverything: true },
+    ...cachePara(conCache),
   });
   if (!r.ok) throw new Error(`Origen respondió ${r.status}`);
   const hoy = hoyMX();
@@ -163,10 +170,10 @@ export function conHorario(c, ahora = Date.now()) {
   return c;
 }
 
-export async function leerCupondeldia() {
+export async function leerCupondeldia({ conCache = false } = {}) {
   const r = await fetch(CUPONDELDIA, {
     headers: { Accept: "application/json", "User-Agent": "cupones-mercadolibre.com/1.0 (+https://cupones-mercadolibre.com)" },
-    cf: { cacheTtl: 300, cacheEverything: true },
+    ...cachePara(conCache),
   });
   if (!r.ok) throw new Error(`cupondeldia respondió ${r.status}`);
   const d = await r.json();
@@ -226,21 +233,57 @@ export async function prepararDB(db) {
   tablasListas = true;
 }
 
-// Guarda en la base lo que hay en el origen, como mucho una vez cada 5 minutos.
-// Nunca borra cupones: así siempre queda el historial.
-export async function sincronizar(db) {
-  const fila = await db.prepare("SELECT valor FROM meta WHERE clave = 'ultima_sync'").first();
-  if (fila && Date.now() - new Date(fila.valor).getTime() < SINCRONIZAR_CADA_MS) return fila.valor;
+// Marcas de tiempo de la sincronización:
+// - ultima_sync: última vez que LAS DOS fuentes se leyeron bien (es lo que la página muestra como "actualizado").
+// - ultimo_intento: última vez que se intentó leer, haya salido bien o mal.
+// - ultimo_error: hora y motivo del último fallo (se borra cuando todo vuelve a salir bien).
+export async function estadoSync(db) {
+  const { results } = await db.prepare(
+    "SELECT clave, valor FROM meta WHERE clave IN ('ultima_sync', 'ultimo_intento', 'ultimo_error')").all();
+  const m = Object.fromEntries(results.map((f) => [f.clave, f.valor]));
+  let error = null;
+  try { error = m.ultimo_error ? JSON.parse(m.ultimo_error) : null; } catch {}
+  return { actualizado: m.ultima_sync || null, intento: m.ultimo_intento || null, error };
+}
 
+export function esReciente(iso, ms = SINCRONIZAR_CADA_MS) {
+  return !!iso && Date.now() - new Date(iso).getTime() < ms;
+}
+
+const metaSql = (db, clave, valor) =>
+  db.prepare("INSERT INTO meta (clave, valor) VALUES (?1, ?2) ON CONFLICT(clave) DO UPDATE SET valor = ?2").bind(clave, valor);
+
+// Guarda en la base lo que hay en las fuentes: si los datos tienen más de 5 minutos, o al minuto si
+// la última lectura falló. Nunca borra cupones: así siempre queda el historial.
+// Devuelve la hora de la última lectura completa (o null si nunca hubo una).
+export async function sincronizar(db) {
+  const antes = await estadoSync(db);
+  if (esReciente(antes.actualizado)) return antes.actualizado;
+
+  // Varias visitas pueden llegar a la vez: solo la que logra "apartar" el intento lee las fuentes.
+  // El UPDATE solo cambia la fila si el intento anterior tiene más de un minuto, y eso es atómico.
   const ahora = new Date().toISOString();
-  await db.prepare("INSERT INTO meta (clave, valor) VALUES ('ultima_sync', ?1) ON CONFLICT(clave) DO UPDATE SET valor = ?1")
-    .bind(ahora).run();
+  const limite = new Date(Date.now() - REINTENTAR_CADA_MS).toISOString();
+  const apartado = await db.prepare(`INSERT INTO meta (clave, valor) VALUES ('ultimo_intento', ?1)
+      ON CONFLICT(clave) DO UPDATE SET valor = ?1 WHERE meta.valor < ?2`).bind(ahora, limite).run();
+  if (!(apartado.meta?.changes > 0)) return antes.actualizado;
 
   // Las dos fuentes por separado: si una falla, la otra se sigue actualizando y lo guardado se sigue mostrando.
   const [principal, cdd] = await Promise.allSettled([leerOrigen(), leerCupondeldia()]);
   const okPrincipal = principal.status === "fulfilled";
   const okCdd = cdd.status === "fulfilled";
-  if (!okPrincipal && !okCdd) return fila?.valor || null;
+  const fallas = [
+    !okPrincipal && `cuponesmercadolibre.mx: ${principal.reason?.message || principal.reason}`,
+    !okCdd && `cupondeldia.com: ${cdd.reason?.message || cdd.reason}`,
+  ].filter(Boolean);
+  // Si algo falló, NO se mueve la hora de "actualizado": así la página nunca dice que está al día sin estarlo.
+  const marcas = fallas.length
+    ? [metaSql(db, "ultimo_error", JSON.stringify({ fecha: ahora, motivo: fallas.join(" | ").slice(0, 300) }))]
+    : [metaSql(db, "ultima_sync", ahora), db.prepare("DELETE FROM meta WHERE clave = 'ultimo_error'")];
+  if (!okPrincipal && !okCdd) {
+    await db.batch(marcas);
+    return antes.actualizado;
+  }
   const cupones = juntar(okPrincipal ? principal.value : [], okCdd ? cdd.value : []);
 
   const guardar = db.prepare(`INSERT INTO cupones (id, codigo, descuento, porcentaje, compra_minima, tope, descripcion, nota,
@@ -259,8 +302,10 @@ export async function sincronizar(db) {
       c.inicia ?? null, c.termina ?? null)),
     ...(okPrincipal ? [salieron(false, cupones.filter((c) => !c.id.startsWith("cdd-")).map((c) => c.id))] : []),
     ...(okCdd ? [salieron(true, cupones.filter((c) => c.id.startsWith("cdd-")).map((c) => c.id))] : []),
+    // Las marcas de tiempo se guardan junto con los cupones: o se guarda todo, o nada.
+    ...marcas,
   ]);
-  return ahora;
+  return fallas.length ? antes.actualizado : ahora;
 }
 
 // ---------- Personas ----------

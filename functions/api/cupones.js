@@ -1,15 +1,16 @@
 // Agente de cupones. Lee el origen como mucho cada 5 minutos, guarda todo en la base
 // (para tener historial) y devuelve los cupones vigentes, el historial y los contadores.
 
-import { conHorario, enlacePara, hoyMX, oculto, json, juntar, leerCupondeldia, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
+import { conHorario, enlacePara, esReciente, estadoSync, hoyMX, oculto, json, juntar, leerCupondeldia, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
 
 const VIGENTES = new Set(["activo", "pocas", "agotado", "proximamente"]);
+const VIEJO_MS = 20 * 60 * 1000; // con más de 20 minutos sin una lectura completa, la página avisa
 
 export async function onRequestGet({ request, env, waitUntil }) {
   // Sin base de datos conectada: funciona como antes, sin likes, opiniones ni historial.
   if (!env.DB) {
     try {
-      const [principal, cdd] = await Promise.allSettled([leerOrigen(), leerCupondeldia()]);
+      const [principal, cdd] = await Promise.allSettled([leerOrigen({ conCache: true }), leerCupondeldia({ conCache: true })]);
       if (principal.status !== "fulfilled" && cdd.status !== "fulfilled") throw principal.reason;
       const cupones = juntar(principal.value || [], cdd.value || []).filter((c) => VIGENTES.has(c.estado)).map((c) => ({ ...c, link: enlacePara(c.tienda) }));
       return json({ actualizado: new Date().toISOString(), funciones: false, cupones, historial: [] });
@@ -20,12 +21,17 @@ export async function onRequestGet({ request, env, waitUntil }) {
 
   const db = env.DB;
   await prepararDB(db);
-  // Si ya hay cupones guardados, respondemos al instante y revisamos el origen por detrás.
-  // Solo la primera vez (base vacía) esperamos a que termine la revisión.
-  const meta = await db.prepare("SELECT valor FROM meta WHERE clave = 'ultima_sync'").first();
-  let actualizado = meta?.valor || null;
-  if (actualizado) waitUntil(sincronizar(db));
-  else actualizado = await sincronizar(db);
+  // Si ya hay cupones guardados, respondemos al instante y revisamos las fuentes por detrás
+  // (la página vuelve a pedir los datos unos segundos después para recibir lo nuevo).
+  // Solo la primera vez (nunca hubo un intento) esperamos a que termine la revisión.
+  const sync = await estadoSync(db);
+  let actualizado = sync.actualizado;
+  let sincronizando = false;
+  if (!sync.intento && !actualizado) actualizado = await sincronizar(db);
+  else if (!esReciente(actualizado)) {
+    waitUntil(sincronizar(db));
+    sincronizando = true;
+  }
   const yo = await votante(request, env);
   const hoy = hoyMX();
 
@@ -51,7 +57,9 @@ export async function onRequestGet({ request, env, waitUntil }) {
   }
 
   return json({
-    actualizado,
+    actualizado, // última lectura completa de las fuentes, nunca la de un intento fallido
+    sincronizando, // true: se están revisando las fuentes ahora mismo
+    desactualizado: !esReciente(actualizado, VIEJO_MS),
     funciones: true,
     totales: { usos: totales.usos, cupones: totales.cupones },
     cupones,

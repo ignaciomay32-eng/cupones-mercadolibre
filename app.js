@@ -16,7 +16,8 @@ const ICONO = {
 let datos = { cupones: [], historial: [], funciones: false };
 let categoria = "Todos";
 let primeraVez = true;
-let reintentado = false;
+let ultimaCarga = 0;
+let repasoPendiente = null;
 const revelados = new Set();
 
 // ---------- utilidades ----------
@@ -295,10 +296,18 @@ function renderCategorias() {
 }
 
 function renderVivo() {
-  if (!datos.actualizado) return;
+  // "desactualizado" lo manda el servidor cuando lleva más de 20 minutos sin poder leer las fuentes.
+  const atrasado = !!datos.desactualizado;
+  $("#vivo").classList.toggle("atrasado", atrasado);
   const activos = datos.cupones.filter((c) => c.estado === "activo" || c.estado === "pocas").length;
   const cuantos = activos === 1 ? "1 cupón activo" : `${numero(activos)} cupones activos`;
-  $("#vivo-texto").textContent = `${cuantos} · revisados ${haceCuanto(datos.actualizado)}`;
+  if (!datos.actualizado) {
+    if (atrasado) $("#vivo-texto").textContent = `${cuantos} · no pudimos revisarlos todavía`;
+    return;
+  }
+  $("#vivo-texto").textContent = atrasado
+    ? `${cuantos} · última revisión ${haceCuanto(datos.actualizado)}, puede no estar al día`
+    : `${cuantos} · revisados ${haceCuanto(datos.actualizado)}`;
 }
 
 function buscarCupon(id) {
@@ -462,10 +471,12 @@ renderTemporadas();
 
 $("#anio").textContent = new Date().getFullYear();
 
-function cargar() {
+function cargar({ repaso = false } = {}) {
+  ultimaCarga = Date.now();
   return fetch("/api/cupones", { cache: "no-store" })
     .then((r) => r.json())
     .then((data) => {
+      if (!Array.isArray(data.cupones)) throw new Error(data.error || "Respuesta inválida");
       datos = { cupones: [], historial: [], ...data };
       datos.cupones = datos.cupones
         .filter((c) => !c.vence || c.vence >= hoy)
@@ -479,13 +490,10 @@ function cargar() {
       render();
       renderVivo();
       renderFormOpinion();
-      // El servidor responde con lo guardado y revisa el origen por detrás. Si lo guardado
-      // tiene más de 5 minutos, pedimos otra vez en unos segundos para mostrar la revisión nueva.
-      const viejo = Date.now() - new Date(datos.actualizado) > 5 * 60 * 1000;
-      if (viejo && !reintentado) {
-        reintentado = true;
-        setTimeout(cargar, 4000);
-      }
+      // El servidor responde con lo guardado y, si avisa que está revisando las fuentes por detrás,
+      // pedimos otra vez en unos segundos para mostrar la revisión nueva (una vez por cada carga).
+      clearTimeout(repasoPendiente);
+      if (datos.sincronizando && !repaso) repasoPendiente = setTimeout(() => cargar({ repaso: true }), 4000);
     })
     .catch(() => {
       if (datos.cupones.length) return;
@@ -496,5 +504,12 @@ function cargar() {
 }
 
 cargar().then(cargarOpiniones);
-setInterval(cargar, 5 * 60 * 1000); // refresca cada 5 minutos
+// Refresca cada 5 minutos mientras la pestaña está a la vista.
+setInterval(() => {
+  if (document.visibilityState === "visible") cargar();
+}, 5 * 60 * 1000);
+// Al volver a la pestaña después de un rato, trae los cupones al momento.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && Date.now() - ultimaCarga > 60 * 1000) cargar();
+});
 setInterval(renderVivo, 30 * 1000);

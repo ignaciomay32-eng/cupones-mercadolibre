@@ -62,6 +62,8 @@ svg { display: block; }
 .hero { background: var(--card); padding: 36px 0 28px; }
 .vivo { display: flex; align-items: center; gap: 8px; margin: 16px 0 0; color: var(--accent); font-size: .95rem; font-weight: 600; }
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.vivo.atrasado { color: var(--warn); }
+.vivo.atrasado .punto { background: var(--warn); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent); }
 .hero h1 {
   margin: 0;
   font-size: clamp(2.2rem, 7vw, 3.5rem);
