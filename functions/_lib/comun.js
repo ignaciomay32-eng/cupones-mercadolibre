@@ -12,6 +12,14 @@ export const CUPONDELDIA = "https://cupondeldia.com/api/cupones/compartir";
 export const OCULTAR_CODIGOS = ["DIRECT-2AA80C7A"];
 const ocultos = new Set(OCULTAR_CODIGOS.map((c) => c.trim().toUpperCase()));
 export const oculto = (c) => ocultos.has((c.codigo || "").trim().toUpperCase());
+
+// INTERRUPTOR (pedido del dueño, 21 de noviembre de 2026: "por el momento no hay cupones"): mientras sea false, esta
+// página (y AhorraMX, que toma los cupones de aquí) muestra SOLO las promociones bancarias sin código de cupondeldia.com:
+// nada de cupones de Mercado Libre ni de Amazon, tampoco en el historial. Se siguen guardando en la base, así que al
+// cambiarlo a true vuelven a salir tal cual.
+export const MOSTRAR_CUPONES = false;
+export const esPromo = (c) => /^cdd-bp-/.test(c.id || "");
+export const visible = (c) => !oculto(c) && (MOSTRAR_CUPONES || esPromo(c));
 export const enlacePara = (tienda) => (tienda === "amazon" ? AMAZON : AFILIADO);
 export const SINCRONIZAR_CADA_MS = 5 * 60 * 1000; // datos buenos: se vuelven a revisar a los 5 minutos
 const REINTENTAR_CADA_MS = 60 * 1000; // si una fuente falló, se reintenta al minuto
