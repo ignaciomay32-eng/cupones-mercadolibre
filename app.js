@@ -194,7 +194,7 @@ function tarjeta(c, i, enHistorial = false) {
       <span class="cupon-cat">${escapar(cat || "")}</span>
       <span class="tienda">Válido en ${tienda}</span>
     </div>
-    <p class="cupon-monto"><span class="monto">${escapar(monto)}</span>${sufijo ? ` <span class="monto-sufijo">de descuento</span>` : ""}</p>
+    <p class="cupon-monto"><span class="monto">${escapar(monto)}</span>${c.detalle ? ` <span class="monto-sufijo">${escapar(c.detalle)}</span>` : sufijo ? ` <span class="monto-sufijo">de descuento</span>` : ""}</p>
     ${cond ? `<p class="cupon-cond">${cond}</p>` : ""}
     ${c.nota ? `<p class="nota">${escapar(c.nota)}</p>` : ""}
     ${horario ? `<p class="nota horario">🕘 ${horario}</p>` : ""}

@@ -178,7 +178,40 @@ export async function leerCupondeldia({ conCache = false } = {}) {
   if (!r.ok) throw new Error(`cupondeldia respondió ${r.status}`);
   const d = await r.json();
   if (!Array.isArray(d.cupones)) throw new Error("cupondeldia no trajo la lista");
-  return d.cupones.map(normalizarCdd).filter(Boolean);
+  const promos = Array.isArray(d.promociones) ? d.promociones.map(normalizarPromo).filter(Boolean) : [];
+  return [...d.cupones.map(normalizarCdd).filter(Boolean), ...promos];
+}
+
+// Promoción bancaria de Mercado Libre SIN código (cupondeldia.com): se activa pagando con la tarjeta en Mercado Libre.
+// Sale como tarjeta sin código y con el botón "Ver promoción en Mercado Libre" (con el enlace de esta página).
+export function normalizarPromo(p) {
+  if (!p || typeof p.id !== "string" || !p.id.startsWith("cdd-bp-") || p.id.length > 64 || p.tienda !== "mercadolibre") return null;
+  const beneficio = limpiar(p.beneficio);
+  const banco = limpiar(p.banco);
+  if (!beneficio || !banco) return null;
+  const nota = [limpiar(p.descripcion), p.requiere_registro ? "Requiere registro previo con tu banco." : null].filter(Boolean).join(" ");
+  return {
+    id: p.id,
+    tienda: "mercadolibre",
+    codigo: null,
+    descuento: beneficio,
+    detalle: limpiar(p.detalle),
+    porcentaje: /%/.test(beneficio) ? beneficio : null,
+    compra_minima: limpiar(p.compra_minima),
+    tope: limpiar(p.tope),
+    descripcion: "Se activa pagando con tu tarjeta en Mercado Libre. No requiere código.",
+    nota: nota || null,
+    categoria: "Bancos",
+    banco,
+    boton: "Ver promoción en Mercado Libre",
+    vence: typeof p.vence === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.vence) ? p.vence : null,
+    publicado: hoyMX(),
+    destacado: 0,
+    prioridad: 0,
+    estado: "activo",
+    inicia: null,
+    termina: null,
+  };
 }
 
 // Junta las dos fuentes. Cada código sale una sola vez por tienda: si un código de Mercado Libre ya viene del origen
@@ -186,7 +219,7 @@ export async function leerCupondeldia({ conCache = false } = {}) {
 export function juntar(origen, cdd, ahora = Date.now()) {
   // Horario puesto en cupondeldia.com: manda también sobre el mismo código que llega del origen principal.
   const horarios = new Map();
-  for (const c of cdd) if (c.tienda === "mercadolibre" && (c.inicia || c.termina || c.estado === "vencido")) horarios.set(c.codigo.toUpperCase(), c);
+  for (const c of cdd) if (c.codigo && c.tienda === "mercadolibre" && (c.inicia || c.termina || c.estado === "vencido")) horarios.set(c.codigo.toUpperCase(), c);
   const base = origen.map((c) => {
     const h = horarios.get((c.codigo || "").toUpperCase());
     const o = { ...c, tienda: "mercadolibre", inicia: c.inicia ?? null, termina: c.termina ?? null };
@@ -195,7 +228,8 @@ export function juntar(origen, cdd, ahora = Date.now()) {
   const vistos = new Set(base.map((c) => `mercadolibre|${(c.codigo || "").toUpperCase()}`));
   const extra = [];
   for (const c of [...cdd].sort((a, b) => Number(!!a.nota) - Number(!!b.nota))) {
-    const llave = `${c.tienda}|${c.codigo.toUpperCase()}`;
+    // las promociones bancarias no tienen código: se distinguen por su id
+    const llave = c.codigo ? `${c.tienda}|${c.codigo.toUpperCase()}` : `id|${c.id}`;
     if (vistos.has(llave) || c.estado === "vencido") continue;
     vistos.add(llave);
     extra.push(conHorario(c, ahora));
@@ -230,6 +264,8 @@ export async function prepararDB(db) {
   // horario puesto en cupondeldia.com (ISO UTC)
   await db.prepare("ALTER TABLE cupones ADD COLUMN inicia TEXT").run().catch(() => null);
   await db.prepare("ALTER TABLE cupones ADD COLUMN termina TEXT").run().catch(() => null);
+  // texto junto al monto en promociones bancarias ("de bonificación", "sin intereses")
+  await db.prepare("ALTER TABLE cupones ADD COLUMN detalle TEXT").run().catch(() => null);
   tablasListas = true;
 }
 
@@ -287,11 +323,11 @@ export async function sincronizar(db) {
   const cupones = juntar(okPrincipal ? principal.value : [], okCdd ? cdd.value : []);
 
   const guardar = db.prepare(`INSERT INTO cupones (id, codigo, descuento, porcentaje, compra_minima, tope, descripcion, nota,
-      categoria, banco, boton, vence, publicado, destacado, prioridad, estado, visto_primero, visto_ultimo, en_origen, tienda, inicia, termina)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17, 1, ?18, ?19, ?20)
+      categoria, banco, boton, vence, publicado, destacado, prioridad, estado, visto_primero, visto_ultimo, en_origen, tienda, inicia, termina, detalle)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17, 1, ?18, ?19, ?20, ?21)
     ON CONFLICT(id) DO UPDATE SET codigo = ?2, descuento = ?3, porcentaje = ?4, compra_minima = ?5, tope = ?6,
       descripcion = ?7, nota = ?8, categoria = ?9, banco = ?10, boton = ?11, vence = ?12,
-      publicado = CASE WHEN id LIKE 'cdd-%' THEN publicado ELSE ?13 END, destacado = ?14, prioridad = ?15, estado = ?16, visto_ultimo = ?17, en_origen = 1, tienda = ?18, inicia = ?19, termina = ?20`);
+      publicado = CASE WHEN id LIKE 'cdd-%' THEN publicado ELSE ?13 END, destacado = ?14, prioridad = ?15, estado = ?16, visto_ultimo = ?17, en_origen = 1, tienda = ?18, inicia = ?19, termina = ?20, detalle = ?21`);
 
   // Lo que ya no aparece en su fuente deja de mostrarse (solo si esa fuente respondió bien).
   const salieron = (esCdd, ids) => db.prepare(`UPDATE cupones SET en_origen = 0 WHERE en_origen = 1 AND id ${esCdd ? "LIKE" : "NOT LIKE"} 'cdd-%'`
@@ -299,7 +335,7 @@ export async function sincronizar(db) {
   await db.batch([
     ...cupones.map((c) => guardar.bind(c.id, c.codigo, c.descuento, c.porcentaje, c.compra_minima, c.tope,
       c.descripcion, c.nota, c.categoria, c.banco, c.boton, c.vence, c.publicado, c.destacado, c.prioridad, c.estado, ahora, c.tienda,
-      c.inicia ?? null, c.termina ?? null)),
+      c.inicia ?? null, c.termina ?? null, c.detalle ?? null)),
     ...(okPrincipal ? [salieron(false, cupones.filter((c) => !c.id.startsWith("cdd-")).map((c) => c.id))] : []),
     ...(okCdd ? [salieron(true, cupones.filter((c) => c.id.startsWith("cdd-")).map((c) => c.id))] : []),
     // Las marcas de tiempo se guardan junto con los cupones: o se guarda todo, o nada.
