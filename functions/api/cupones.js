@@ -1,7 +1,7 @@
 // Agente de cupones. Lee el origen como mucho cada 5 minutos, guarda todo en la base
 // (para tener historial) y devuelve los cupones vigentes, el historial y los contadores.
 
-import { conHorario, enlacePara, esReciente, estadoSync, hoyMX, visible, json, juntar, leerCupondeldia, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
+import { conHorario, enlacePara, esPromo, esReciente, estadoSync, hoyMX, visible, json, juntar, leerCupondeldia, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
 
 const VIGENTES = new Set(["activo", "pocas", "agotado", "proximamente"]);
 const VIEJO_MS = 20 * 60 * 1000; // con más de 20 minutos sin una lectura completa, la página avisa
@@ -53,7 +53,8 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const c = conHorario({ ...f, tienda: f.tienda || "mercadolibre", link: enlacePara(f.tienda), me_gusta: mios.has(f.id) });
     const vigente = f.en_origen === 1 && VIGENTES.has(c.estado) && (!f.vence || f.vence >= hoy);
     if (vigente) cupones.push(c);
-    else historial.push({ ...c, estado: c.estado === "vencido" || (f.vence && f.vence < hoy) ? "vencido" : "finalizado" });
+    // las promociones bancarias que ya no están (terminaron o el dueño las quitó) no se quedan en el historial
+    else if (!esPromo(f)) historial.push({ ...c, estado: c.estado === "vencido" || (f.vence && f.vence < hoy) ? "vencido" : "finalizado" });
   }
 
   return json({
