@@ -19,7 +19,7 @@ Arriba de `functions/_lib/comun.js`:
 - `AFILIADO`: enlace del botón de **todos** los cupones (del día, bancarios, flash y activables). Hoy: `https://meli.la/1tucCjM`.
 - `ORIGEN`: página de donde salen los cupones.
 - Horario: si en cupondeldia.com se le pone "Se activa" / "Se desactiva" a un cupón, aquí sale "Próximamente" (sin código) hasta esa hora y desaparece al desactivarse; también aplica al mismo código que llega del origen principal.
-- `MOSTRAR_CUPONES`: interruptor. Hoy `false` ("por el momento no hay cupones"): solo salen las promociones bancarias sin código de cupondeldia.com, aquí y en AhorraMX. En `true` vuelven los cupones.
+- `MOSTRAR_CUPONES`: interruptor de los cupones de cuponesmercadolibre.mx. Hoy `false`: esos no salen. Los cupones y promociones de cupondeldia.com salen siempre (se prenden o apagan desde el panel de cupondeldia.com).
 - `functions/_lib/promos.js` (`PROMOS_TIENDAS`): promociones de tiendas sin código que pasa el dueño, cada una con SU enlace de afiliado (se usa igual aquí y en AhorraMX). Se quedan hasta que el dueño pida quitarlas.
 - `OCULTAR_CODIGOS`: códigos que nunca se muestran aquí ni en AhorraMX (hoy: `DIRECT-2AA80C7A`).
 - `SINCRONIZAR_CADA_MS`: cada cuánto se vuelve a leer el origen (5 minutos).
