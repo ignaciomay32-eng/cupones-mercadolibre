@@ -20,6 +20,7 @@ Arriba de `functions/_lib/comun.js`:
 - `ORIGEN`: página de donde salen los cupones.
 - Horario: si en cupondeldia.com se le pone "Se activa" / "Se desactiva" a un cupón, aquí sale "Próximamente" (sin código) hasta esa hora y desaparece al desactivarse; también aplica al mismo código que llega del origen principal.
 - `MOSTRAR_CUPONES`: interruptor. Hoy `false` ("por el momento no hay cupones"): solo salen las promociones bancarias sin código de cupondeldia.com, aquí y en AhorraMX. En `true` vuelven los cupones.
+- `functions/_lib/promos.js` (`PROMOS_TIENDAS`): promociones de tiendas sin código que pasa el dueño, cada una con SU enlace de afiliado (se usa igual aquí y en AhorraMX). Se quedan hasta que el dueño pida quitarlas.
 - `OCULTAR_CODIGOS`: códigos que nunca se muestran aquí ni en AhorraMX (hoy: `DIRECT-2AA80C7A`).
 - `SINCRONIZAR_CADA_MS`: cada cuánto se vuelve a leer el origen (5 minutos).
 

@@ -173,7 +173,8 @@ function tarjeta(c, i, enHistorial = false) {
   } else if (usable) {
     const pronto = diasHasta(c.vence || "9999-12-31") <= 0;
     linea = [
-      c.visto_ultimo ? `Verificado ${haceCuanto(c.visto_ultimo)}` : "",
+      // las promociones de tiendas las pasa el dueño: aquí no se revisan, así que no dicen "Verificado"
+      c.visto_ultimo && !c.id.startsWith("cdd-pt-") ? `Verificado ${haceCuanto(c.visto_ultimo)}` : "",
       textoVence(c) ? `<span class="${pronto ? "pronto" : ""}">${textoVence(c)}</span>` : "",
       c.usos >= MOSTRAR_DESDE ? `${numero(c.usos)} lo copiaron` : "",
     ].filter(Boolean).join(" · ");

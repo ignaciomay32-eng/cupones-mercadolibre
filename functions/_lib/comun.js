@@ -1,5 +1,7 @@
 // Código compartido por las rutas de /api: lectura del origen, base de datos y utilidades.
 
+import { enlacePromo, promosTiendas } from "./promos.js";
+
 export const ORIGEN = "https://www.cuponesmercadolibre.mx/";
 // Enlace del botón de TODOS los cupones (del día, bancarios, flash y activables).
 export const AFILIADO = "https://meli.la/1tucCjM";
@@ -18,9 +20,11 @@ export const oculto = (c) => ocultos.has((c.codigo || "").trim().toUpperCase());
 // nada de cupones de Mercado Libre ni de Amazon, tampoco en el historial. Se siguen guardando en la base, así que al
 // cambiarlo a true vuelven a salir tal cual.
 export const MOSTRAR_CUPONES = false;
-export const esPromo = (c) => /^cdd-bp-/.test(c.id || "");
+// promociones sin código: bancarias (cdd-bp-, de cupondeldia.com) y de tiendas (cdd-pt-, lista en promos.js)
+export const esPromo = (c) => /^cdd-(bp|pt)-/.test(c.id || "");
 export const visible = (c) => !oculto(c) && (MOSTRAR_CUPONES || esPromo(c));
-export const enlacePara = (tienda) => (tienda === "amazon" ? AMAZON : AFILIADO);
+// las promociones de tiendas llevan su propio enlace (el que pasó el dueño); lo demás, el de la página
+export const enlacePara = (tienda, id) => enlacePromo(id) || (tienda === "amazon" ? AMAZON : AFILIADO);
 export const SINCRONIZAR_CADA_MS = 5 * 60 * 1000; // datos buenos: se vuelven a revisar a los 5 minutos
 const REINTENTAR_CADA_MS = 60 * 1000; // si una fuente falló, se reintenta al minuto
 
@@ -328,7 +332,7 @@ export async function sincronizar(db) {
     await db.batch(marcas);
     return antes.actualizado;
   }
-  const cupones = juntar(okPrincipal ? principal.value : [], okCdd ? cdd.value : []);
+  const cupones = juntar(okPrincipal ? principal.value : [], [...(okCdd ? cdd.value : []), ...promosTiendas(hoyMX())]);
 
   const guardar = db.prepare(`INSERT INTO cupones (id, codigo, descuento, porcentaje, compra_minima, tope, descripcion, nota,
       categoria, banco, boton, vence, publicado, destacado, prioridad, estado, visto_primero, visto_ultimo, en_origen, tienda, inicia, termina, detalle)
@@ -346,6 +350,9 @@ export async function sincronizar(db) {
       c.inicia ?? null, c.termina ?? null, c.detalle ?? null)),
     ...(okPrincipal ? [salieron(false, cupones.filter((c) => !c.id.startsWith("cdd-")).map((c) => c.id))] : []),
     ...(okCdd ? [salieron(true, cupones.filter((c) => c.id.startsWith("cdd-")).map((c) => c.id))] : []),
+    // si cupondeldia falló, igual se quitan las promociones de tiendas que el dueño borró de la lista
+    ...(!okCdd ? [db.prepare(`UPDATE cupones SET en_origen = 0 WHERE en_origen = 1 AND id LIKE 'cdd-pt-%'`
+      + ` AND id NOT IN (${promosTiendas("").map(() => "?").join(",") || "''"})`).bind(...promosTiendas("").map((c) => c.id))] : []),
     // Las marcas de tiempo se guardan junto con los cupones: o se guarda todo, o nada.
     ...marcas,
   ]);

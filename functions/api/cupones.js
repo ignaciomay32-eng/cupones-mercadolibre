@@ -1,6 +1,7 @@
 // Agente de cupones. Lee el origen como mucho cada 5 minutos, guarda todo en la base
 // (para tener historial) y devuelve los cupones vigentes, el historial y los contadores.
 
+import { promosTiendas } from "../_lib/promos.js";
 import { conHorario, enlacePara, esPromo, esReciente, estadoSync, hoyMX, visible, json, juntar, leerCupondeldia, leerOrigen, prepararDB, sincronizar, votante } from "../_lib/comun.js";
 
 const VIGENTES = new Set(["activo", "pocas", "agotado", "proximamente"]);
@@ -12,7 +13,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     try {
       const [principal, cdd] = await Promise.allSettled([leerOrigen({ conCache: true }), leerCupondeldia({ conCache: true })]);
       if (principal.status !== "fulfilled" && cdd.status !== "fulfilled") throw principal.reason;
-      const cupones = juntar(principal.value || [], cdd.value || []).filter((c) => VIGENTES.has(c.estado) && visible(c)).map((c) => ({ ...c, link: enlacePara(c.tienda) }));
+      const cupones = juntar(principal.value || [], [...(cdd.value || []), ...promosTiendas(hoyMX())]).filter((c) => VIGENTES.has(c.estado) && visible(c)).map((c) => ({ ...c, link: enlacePara(c.tienda, c.id) }));
       return json({ actualizado: new Date().toISOString(), funciones: false, cupones, historial: [] });
     } catch (e) {
       return json({ error: String(e.message || e), cupones: [], historial: [] }, 502);
@@ -50,7 +51,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const historial = [];
   for (const f of filas) {
     if (!visible(f)) continue; // códigos ocultos y, con el interruptor apagado, todo lo que no sea promoción bancaria
-    const c = conHorario({ ...f, tienda: f.tienda || "mercadolibre", link: enlacePara(f.tienda), me_gusta: mios.has(f.id) });
+    const c = conHorario({ ...f, tienda: f.tienda || "mercadolibre", link: enlacePara(f.tienda, f.id), me_gusta: mios.has(f.id) });
     const vigente = f.en_origen === 1 && VIGENTES.has(c.estado) && (!f.vence || f.vence >= hoy);
     if (vigente) cupones.push(c);
     // las promociones bancarias que ya no están (terminaron o el dueño las quitó) no se quedan en el historial
