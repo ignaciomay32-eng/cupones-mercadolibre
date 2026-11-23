@@ -15,14 +15,17 @@ export const OCULTAR_CODIGOS = ["DIRECT-2AA80C7A"];
 const ocultos = new Set(OCULTAR_CODIGOS.map((c) => c.trim().toUpperCase()));
 export const oculto = (c) => ocultos.has((c.codigo || "").trim().toUpperCase());
 
-// INTERRUPTOR (pedido del dueño, 21 de noviembre de 2026: "por el momento no hay cupones"): mientras sea false, esta
-// página (y AhorraMX, que toma los cupones de aquí) muestra SOLO las promociones bancarias sin código de cupondeldia.com:
-// nada de cupones de Mercado Libre ni de Amazon, tampoco en el historial. Se siguen guardando en la base, así que al
-// cambiarlo a true vuelven a salir tal cual.
+// INTERRUPTOR de los cupones que se leen de cuponesmercadolibre.mx (pedido del dueño, 21 de noviembre de 2026:
+// "por el momento no hay cupones"). Mientras sea false, esa fuente no se muestra aquí ni en AhorraMX (tampoco en el
+// historial); se sigue guardando en la base, así que al cambiarlo a true vuelve tal cual.
+// Los cupones de cupondeldia.com (cdd-) SIEMPRE pasan: el dueño los prende o apaga desde el panel de cupondeldia.com
+// (Panel → Cupones → "Mostrar cupones de Mercado Libre y Amazon"), que deja de mandarlos cuando están apagados.
+// (23 nov 2026: el dueño subió cupones a cupondeldia.com y pidió que salieran aquí y en cuponmercadolibre.com.)
 export const MOSTRAR_CUPONES = false;
 // promociones sin código: bancarias (cdd-bp-, de cupondeldia.com) y de tiendas (cdd-pt-, lista en promos.js)
 export const esPromo = (c) => /^cdd-(bp|pt)-/.test(c.id || "");
-export const visible = (c) => !oculto(c) && (MOSTRAR_CUPONES || esPromo(c));
+export const deCupondeldia = (c) => (c.id || "").startsWith("cdd-");
+export const visible = (c) => !oculto(c) && (MOSTRAR_CUPONES || esPromo(c) || deCupondeldia(c));
 // las promociones de tiendas llevan su propio enlace (el que pasó el dueño); lo demás, el de la página
 export const enlacePara = (tienda, id) => enlacePromo(id) || (tienda === "amazon" ? AMAZON : AFILIADO);
 export const SINCRONIZAR_CADA_MS = 5 * 60 * 1000; // datos buenos: se vuelven a revisar a los 5 minutos
@@ -237,7 +240,8 @@ export function juntar(origen, cdd, ahora = Date.now()) {
     const o = { ...c, tienda: "mercadolibre", inicia: c.inicia ?? null, termina: c.termina ?? null };
     return h ? conHorario({ ...o, inicia: h.inicia, termina: h.termina, estado: h.estado === "vencido" ? "vencido" : o.estado }, ahora) : o;
   });
-  const vistos = new Set(base.map((c) => `mercadolibre|${(c.codigo || "").toUpperCase()}`));
+  // con el interruptor de cuponesmercadolibre.mx apagado, esos cupones no se ven: no deben tapar al mismo código de cupondeldia
+  const vistos = new Set(MOSTRAR_CUPONES ? base.map((c) => `mercadolibre|${(c.codigo || "").toUpperCase()}`) : []);
   const extra = [];
   for (const c of [...cdd].sort((a, b) => Number(!!a.nota) - Number(!!b.nota))) {
     // las promociones bancarias no tienen código: se distinguen por su id
